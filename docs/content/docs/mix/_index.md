@@ -1,6 +1,6 @@
 ---
 weight: 999
 title: "杂"
-icon: "edit"
+icon: "book"
 draft: false
 ---

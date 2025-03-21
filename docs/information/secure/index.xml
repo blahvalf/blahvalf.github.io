@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>安全 on My New Hugo Site</title><link>https://blahvalf.github.io/docs/information/secure/</link><description>Recent content in 安全 on My New Hugo Site</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://blahvalf.github.io/docs/information/secure/index.xml" rel="self" type="application/rss+xml"/><item><title>密码学基础</title><link>https://blahvalf.github.io/docs/information/secure/basic_cryptography/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/secure/basic_cryptography/</guid><description>&lt;h1 id="定义与目标">定义与目标 &lt;a href="#%e5%ae%9a%e4%b9%89%e4%b8%8e%e7%9b%ae%e6%a0%87" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>密码学是研究如何保护信息安全的科学。&lt;/p>
+&lt;p>核心目标：&lt;/p>
+&lt;ul>
+&lt;li>机密性（Confidentiality）：确保信息仅能被授权方读取（如加密电子邮件）。&lt;/li>
+&lt;li>完整性（Integrity）：防止信息被篡改（如数字签名验证文件未被修改）。&lt;/li>
+&lt;li>认证性（Authentication）：验证通信双方身份的真实性（如登录密码或生物识别）。&lt;/li>
+&lt;li>不可否认性（Non-repudiation）：防止发送者事后否认其行为（如区块链交易记录）。&lt;/li>
+&lt;/ul>
+&lt;h1 id="分类">分类 &lt;a href="#%e5%88%86%e7%b1%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;ul>
+&lt;li>技术原理分类
+&lt;ul>
+&lt;li>对称密码（Symmetric Cryptography）
+&lt;ul>
+&lt;li>定义：加密与解密使用同一密钥，也称为私钥密码。&lt;/li>
+&lt;li>分组密码：将明文分为固定长度的块进行加密（如AES、DES、3DES）
+&lt;ul>
+&lt;li>结构：Feistel网络（DES）、SPN结构（AES）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>流密码：将明文逐位加密（如RC4、ChaCha20）&lt;/li>
+&lt;li>特点：速度快，适合大数据量加密，但密钥分发困难。&lt;/li>
+&lt;li>应用场景：文件加密（AES）、无线通信（GSM中的A5/1算法）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>非对称密码（Asymmetric Cryptography）
+&lt;ul>
+&lt;li>定义：使用公钥加密、私钥解密，或私钥签名、公钥验证，也称公钥密码。&lt;/li>
+&lt;li>基于数论难题：RSA（大整数分解）、Diffie-Hellman（离散对数）&lt;/li>
+&lt;li>基于椭圆曲线：ECC（椭圆曲线离散对数）&lt;/li>
+&lt;li>特点：解决密钥分发问题，但计算效率低于对称加密。&lt;/li>
+&lt;li>应用场景：数字签名（RSA）、密钥交换（Diffie-Hellman）、证书认证（X.509）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>哈希函数（Hash Function）
+&lt;ul>
+&lt;li>定义：将任意长度输入映射为固定长度的输出（哈希值），具备单向性和抗碰撞性&lt;/li>
+&lt;li>传统哈希：SHA-256（比特币）、SHA-3（Keccak算法）&lt;/li>
+&lt;li>已淘汰算法：MD5（因碰撞攻击被弃用）&lt;/li>
+&lt;li>特点：不可逆，常用于数据完整性验证和密码存储（加盐哈希）&lt;/li>
+&lt;li>应用场景：区块链Merkle树、文件校验&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>功能目标分类
+&lt;ul>
+&lt;li>加密与解密
+&lt;ul>
+&lt;li>目标：保护数据机密性&lt;/li>
+&lt;li>技术：对称加密（AES）、非对称加密（RSA）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>数字签名（Digital Signature）
+&lt;ul>
+&lt;li>目标：实现认证性和不可否认性。&lt;/li>
+&lt;li>流程：发送方用私钥签名，接收方用公钥验证。&lt;/li>
+&lt;li>算法：RSA签名、ECDSA（比特币交易签名）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>消息认证码（MAC）
+&lt;ul>
+&lt;li>目标：验证数据来源和完整性。&lt;/li>
+&lt;li>技术：HMAC（基于哈希的MAC）、CMAC（基于分组密码的MAC）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>密钥交换（Key Exchange）
+&lt;ul>
+&lt;li>目标：安全协商共享密钥&lt;/li>
+&lt;li>算法：Diffie-Hellman、ECDH（椭圆曲线Diffie-Hellman）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>应用场景分类
+&lt;ul>
+&lt;li>网络通信安全
+&lt;ul>
+&lt;li>SSL/TLS：混合使用对称加密（AES）和非对称加密（RSA/ECC）。&lt;/li>
+&lt;li>VPN：IPsec协议中的ESP加密与AH认证。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>区块链与数字货币
+&lt;ul>
+&lt;li>椭圆曲线签名：比特币的ECDSA。&lt;/li>
+&lt;li>零知识证明：Zcash的zk-SNARKs。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>隐私保护技术
+&lt;ul>
+&lt;li>同态加密（Homomorphic Encryption）：允许在加密数据上直接运算（如医疗数据分析）。&lt;/li>
+&lt;li>安全多方计算（MPC）：多方协作计算数据，但各自隐私数据不泄露。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h1 id="古典密码">古典密码 &lt;a href="#%e5%8f%a4%e5%85%b8%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>古典密码学主要关注信息的保密书写和传递，以及与其相对应的破译方法。&lt;/p>
+&lt;ul>
+&lt;li>理解密码学基础：揭示加密核心思想（混淆与扩散），为现代密码学（如AES的S盒设计）奠定基础。&lt;/li>
+&lt;li>掌握密码分析入门：频率分析、卡西斯基试验等攻击方法，是密码分析思维的起点。&lt;/li>
+&lt;/ul>
+&lt;h2 id="替换密码">替换密码 &lt;a href="#%e6%9b%bf%e6%8d%a2%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>原理：将明文中的字符替换为另一字符（或符号）。&lt;/p>
+&lt;p>典型设计：&lt;/p></description></item><item><title>现代密码学</title><link>https://blahvalf.github.io/docs/information/secure/modern_cryptography/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/secure/modern_cryptography/</guid><description/></item></channel></rss>

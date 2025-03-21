@@ -1,0 +1,1173 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>My New Hugo Site</title><link>https://blahvalf.github.io/</link><description>Recent content on My New Hugo Site</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://blahvalf.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>K8s架构</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_arch/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_arch/</guid><description>&lt;h1 id="系统架构">系统架构 &lt;a href="#%e7%b3%bb%e7%bb%9f%e6%9e%b6%e6%9e%84" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>Kubernetes 最初源于谷歌内部的 Borg，提供了面向应用的容器集群部署和管理系统。Kubernetes 的目标旨在消除编排物理 / 虚拟计算，网络和存储基础设施的负担，并使应用程序运营商和开发人员完全将重点放在以容器为中心的原语上进行自助运营。Kubernetes 也提供稳定、兼容的基础（平台），用于构建定制化的 workflows 和更高级的自动化任务。 Kubernetes 具备完善的集群管理能力，包括多层次的安全防护和准入机制、多租户应用支撑能力、透明的服务注册和服务发现机制、内建负载均衡器、故障发现和自我修复能力、服务滚动升级和在线扩容、可扩展的资源自动调度机制、多粒度的资源配额管理能力。Kubernetes 还提供完善的管理工具，涵盖开发、部署测试、运维监控等各个环节。&lt;/p>
+&lt;p>Kubernetes 借鉴了 Borg 的设计理念，比如 Pod、Service、Label 和单 Pod 单 IP 等。Kubernetes 的整体架构跟 Borg 非常像，如下图所示。&lt;/p>
+&lt;pre class="mermaid">graph TD
+ subgraph 外部用户
+ K[kubectl]
+ end
+
+ subgraph Master节点
+ A[API Server&amp;lt;br/&amp;gt;REST模式]
+ AD[Admission&amp;lt;br/&amp;gt;校验/变更]
+ S[Storage&amp;lt;br/&amp;gt;etcd]
+ CM[Controller Manager]
+ SCH[Scheduler]
+ end
+
+ subgraph Node节点
+ K1[kubelet]
+ K2[kubelet]
+ P1[Pod]
+ P2[Pod]
+ C1[Container]
+ C2[Container]
+ C3[Container]
+ end
+
+ 网络((Internet)) --&amp;gt; FW[Firewall]
+ FW --&amp;gt; PR[Proxy]
+ 
+ K -- 认证请求 --&amp;gt; A
+ A &amp;lt;-- Valid &amp;amp; Mutex --&amp;gt; AD
+ A -- 存储 --&amp;gt; S
+
+ CM &amp;lt;-- 监听/读写/资源变更 --&amp;gt; A
+ A &amp;lt;-- 读写/调度 --&amp;gt; SCH
+
+ 
+ A &amp;lt;-- 获取状态/更新状态 --&amp;gt; K1
+ K1 --&amp;gt; P1 --&amp;gt; C1 &amp;amp; C2
+ K1 --&amp;gt; P2 --&amp;gt; C3
+
+ PR -. 流量代理 .-&amp;gt; P1
+ PR -. 流量代理 .-&amp;gt; P2
+
+ classDef master fill:#f9f,stroke:#333;
+ classDef node fill:#ccf,stroke:#333;
+ classDef pod fill:#cff,stroke:#333;
+ class K1,K2,PR node;
+ class A,AD,S,CM,SCH master;
+ class P1,P2 pod;
+&lt;/pre>
+&lt;p>Kubernetes 主要由以下几个核心组件组成：&lt;/p></description></item><item><title>资源对象</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_manager/resources/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_manager/resources/</guid><description>&lt;p>以下列举的内容都是 Kubernetes 中的对象（Object），这些对象都可以在 YAML 文件中作为一种 API 类型来配置。&lt;/p>
+&lt;ul>
+&lt;li>Pod&lt;/li>
+&lt;li>Node&lt;/li>
+&lt;li>Namespace&lt;/li>
+&lt;li>Service&lt;/li>
+&lt;li>Volume&lt;/li>
+&lt;li>PersistentVolume&lt;/li>
+&lt;li>Deployment&lt;/li>
+&lt;li>Secret&lt;/li>
+&lt;li>StatefulSet&lt;/li>
+&lt;li>DaemonSet&lt;/li>
+&lt;li>ServiceAccount&lt;/li>
+&lt;li>ReplicationController&lt;/li>
+&lt;li>ReplicaSet&lt;/li>
+&lt;li>Job&lt;/li>
+&lt;li>CronJob&lt;/li>
+&lt;li>SecurityContext&lt;/li>
+&lt;li>ResourceQuota&lt;/li>
+&lt;li>LimitRange&lt;/li>
+&lt;li>HorizontalPodAutoscaling&lt;/li>
+&lt;li>Ingress&lt;/li>
+&lt;li>ConfigMap&lt;/li>
+&lt;li>Label&lt;/li>
+&lt;li>CustomResourceDefinition&lt;/li>
+&lt;li>Role&lt;/li>
+&lt;li>ClusterRole&lt;/li>
+&lt;/ul>
+&lt;p>我将它们简单的分类为以下几种资源对象：&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th style="text-align: left">类别&lt;/th>
+ &lt;th>名称&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td style="text-align: left">资源对象&lt;/td>
+ &lt;td>Pod、ReplicaSet、ReplicationController、Deployment、StatefulSet、DaemonSet、Job、CronJob、HorizontalPodAutoscaling、Node、Namespace、Service、Ingress、Label、CustomResourceDefinition&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">存储对象&lt;/td>
+ &lt;td>Volume、PersistentVolume、Secret、ConfigMap&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">策略对象&lt;/td>
+ &lt;td>SecurityContext、ResourceQuota、LimitRange&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">身份对象&lt;/td>
+ &lt;td>ServiceAccount、Role、ClusterRole&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="理解-kubernetes-中的对象">理解 Kubernetes 中的对象 &lt;a href="#%e7%90%86%e8%a7%a3-kubernetes-%e4%b8%ad%e7%9a%84%e5%af%b9%e8%b1%a1" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>在 Kubernetes 系统中，&lt;em>Kubernetes 对象&lt;/em> 是持久化的条目。Kubernetes 使用这些条目去表示整个集群的状态。特别地，它们描述了如下信息：&lt;/p>
+&lt;ul>
+&lt;li>什么容器化应用在运行（以及在哪个 Node 上）&lt;/li>
+&lt;li>可以被应用使用的资源&lt;/li>
+&lt;li>关于应用如何表现的策略，比如重启策略、升级策略，以及容错策略&lt;/li>
+&lt;/ul>
+&lt;p>Kubernetes 对象是 “目标性记录” —— 一旦创建对象，Kubernetes 系统将持续工作以确保对象存在。通过创建对象，可以有效地告知 Kubernetes 系统，所需要的集群工作负载看起来是什么样子的，这就是 Kubernetes 集群的 &lt;strong>期望状态&lt;/strong>。&lt;/p>
+&lt;p>与 Kubernetes 对象工作 —— 是否创建、修改，或者删除 —— 需要使用 Kubernetes API。当使用 &lt;code>kubectl&lt;/code> 命令行接口时，比如，CLI 会使用必要的 Kubernetes API 调用，也可以在程序中直接使用 Kubernetes API。为了实现该目标，Kubernetes 当前提供了一个 &lt;code>golang&lt;/code> &lt;a href="https://github.com/kubernetes/client-go" rel="external" target="_blank">客户端库&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> ，其它语言库（例如&lt;a href="https://github.com/kubernetes-incubator/client-python" rel="external" target="_blank">Python&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>）也正在开发中。&lt;/p></description></item><item><title>Pod</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_manager/pod/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_manager/pod/</guid><description>&lt;h2 id="概念">概念 &lt;a href="#%e6%a6%82%e5%bf%b5" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Pod 是 Kubernetes 中最小的可部署单元，代表集群中运行的一个应用实例，由一个或多个紧密关联的容器组成。这些容器共享网络命名空间（同一 IP 和端口）、存储卷及其他资源，支持协同工作模式（如主容器与 sidecar 辅助容器配合）。通常情况下，每个 Pod 封装单个容器，但在需要耦合协作的场景（如日志收集、配置同步）中可包含多个容器。Pod 不直接管理，而是通过控制器（如 Deployment）进行复制扩展（运行多个相同 Pod 实现水平扩容），且支持 Docker 在内的多种容器运行时。&lt;/p>
+&lt;p>Pod 支持在同一节点上运行多个容器，这些容器共享网络命名空间（同一IP和端口）及存储卷，形成紧密协作的进程组。典型用例是主容器（如Web服务）与Sidecar容器（如日志收集、配置更新）协同工作：&lt;/p>
+&lt;ul>
+&lt;li>网络共享：容器通过 localhost 直接通信，对外暴露统一IP。&lt;/li>
+&lt;li>存储共享：多个容器可读写同一持久化Volume，避免数据丢失。&lt;/li>
+&lt;li>调度特性：容器始终被共同调度到同一节点，确保低延迟协作。&lt;/li>
+&lt;/ul>
+&lt;p>⚠️ 适用场景：仅当容器需强耦合（如实时文件同步、依赖本地通信）时使用多容器Pod，否则优先采用单容器Pod+独立服务设计，以降低复杂度。&lt;/p>
+&lt;p>在 Kubernetes 中，Pod 作为短暂且易失的实体，通常不直接单独创建，因其缺乏自愈能力且生命周期受节点故障、资源不足或进程终止等影响而无法持久。为确保高可用性和弹性，用户通过更高级的 Controller（如 Deployment、StatefulSet、DaemonSet）管理 Pod。Controller 基于 Pod 模板动态创建并维护 Pod 集群，提供副本控制、滚动升级及自愈能力，例如在节点故障时自动将 Pod 重新调度至健康节点，从而抽象化底层运维复杂度，保障应用持续稳定运行。&lt;/p>
+&lt;h3 id="动机">动机 &lt;a href="#%e5%8a%a8%e6%9c%ba" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>管理： Pod 是一个服务的多个进程的聚合单位，pod 提供这种模型能够简化应用部署管理，通过提供一个更高级别的抽象的方式。Pod 作为一个独立的部署单位，支持横向扩展和复制。共生（协同调度），命运共同体（例如被终结），协同复制，资源共享，依赖管理，pod 都会自动的为容器处理这些问题。&lt;/li>
+&lt;li>资源共享和通信： Pod 中的应用可以共享网络空间（IP 地址和端口），因此可以通过 localhost 互相发现。Pod 中的应用容器可以共享卷。持久化卷能够保证 pod 重启时使用的数据不丢失。&lt;/li>
+&lt;/ul>
+&lt;h3 id="持久性">持久性 &lt;a href="#%e6%8c%81%e4%b9%85%e6%80%a7" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>Pod 在设计支持就不是作为持久化实体的。在调度失败、节点故障、缺少资源或者节点维护的状态下都会死掉会被驱逐。&lt;/p>
+&lt;p>通常，用户不需要手动直接创建 Pod，而是应该使用 controller（例如 Deployments），即使是在创建单个 Pod 的情况下。Controller 可以提供集群级别的自愈功能、复制和升级管理。&lt;/p></description></item><item><title>设计模式与七大原则</title><link>https://blahvalf.github.io/docs/information/software/serven_rules/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/serven_rules/</guid><description>&lt;h2 id="设计模式概述">设计模式概述 &lt;a href="#%e8%ae%be%e8%ae%a1%e6%a8%a1%e5%bc%8f%e6%a6%82%e8%bf%b0" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>设计模式是&lt;strong>可复用面向对象软件的设计经验总结&lt;/strong>，通过23种经典模式解决特定场景下的代码扩展性、复用性、维护性问题。其本质遵循七大核心设计原则：&lt;/p>
+&lt;hr>
+&lt;h2 id="七大设计原则详解">七大设计原则详解 &lt;a href="#%e4%b8%83%e5%a4%a7%e8%ae%be%e8%ae%a1%e5%8e%9f%e5%88%99%e8%af%a6%e8%a7%a3" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-单一职责原则srp">1. 单一职责原则（SRP） &lt;a href="#1-%e5%8d%95%e4%b8%80%e8%81%8c%e8%b4%a3%e5%8e%9f%e5%88%99srp" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>核心思想&lt;/strong>：一个类只负责一个功能领域中的相应职责&lt;br>
+&lt;strong>解决问题&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>避免类因承担过多职责导致的高耦合&lt;/li>
+&lt;li>减少修改代码时引发连锁错误的风险&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>示例&lt;/strong>：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="2515545" class="language-java ">
+ &lt;code>// 错误示例：用户管理类同时处理信息存储和日志记录
+class UserManager {
+ void saveUser() { /* 存储用户 */ }
+ void logActivity() { /* 记录日志 */ }
+}
+
+// 正确拆分
+class UserRepository { void saveUser() }
+class ActivityLogger { void logActivity() }&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;hr>
+&lt;h3 id="2-开闭原则ocp">2. 开闭原则（OCP） &lt;a href="#2-%e5%bc%80%e9%97%ad%e5%8e%9f%e5%88%99ocp" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>核心思想&lt;/strong>：对扩展开放，对修改关闭&lt;br>
+&lt;strong>解决问题&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>新功能扩展无需修改原有代码&lt;/li>
+&lt;li>提升系统稳定性与可维护性&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>示例&lt;/strong>：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="1bbff81" class="language-java ">
+ &lt;code>// 基础图形接口
+interface Shape { double area(); }
+
+// 新增图形只需扩展接口
+class Circle implements Shape { /* 实现圆面积计算 */ }
+class Square implements Shape { /* 实现正方形面积计算 */ }&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;hr>
+&lt;h3 id="3-里氏替换原则lsp">3. 里氏替换原则（LSP） &lt;a href="#3-%e9%87%8c%e6%b0%8f%e6%9b%bf%e6%8d%a2%e5%8e%9f%e5%88%99lsp" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>核心思想&lt;/strong>：子类必须能替换父类且不影响程序正确性&lt;br>
+&lt;strong>解决问题&lt;/strong>：&lt;/p></description></item><item><title>简洁架构</title><link>https://blahvalf.github.io/docs/information/software/clean_arch/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/clean_arch/</guid><description>&lt;h2 id="1-概念与核心目标">1. 概念与核心目标 &lt;a href="#1-%e6%a6%82%e5%bf%b5%e4%b8%8e%e6%a0%b8%e5%bf%83%e7%9b%ae%e6%a0%87" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>简洁架构（Clean Architecture）是一种&lt;strong>以业务逻辑为核心&lt;/strong>的软件架构设计方法论。其核心目标是：&lt;/p>
+&lt;ul>
+&lt;li>建立&lt;strong>框架无关&lt;/strong>的系统结构&lt;/li>
+&lt;li>保持业务逻辑的&lt;strong>独立性&lt;/strong>与&lt;strong>可测试性&lt;/strong>&lt;/li>
+&lt;li>实现&lt;strong>双向隔离&lt;/strong>：业务核心与技术实现的隔离、数据源与展示层的隔离&lt;/li>
+&lt;li>通过分层设计强制实施&lt;strong>依赖规则&lt;/strong>&lt;/li>
+&lt;/ul>
+&lt;h2 id="2-核心设计思想">2. 核心设计思想 &lt;a href="#2-%e6%a0%b8%e5%bf%83%e8%ae%be%e8%ae%a1%e6%80%9d%e6%83%b3" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;pre class="mermaid">graph TD
+ subgraph 框架层
+ Web[Web框架]
+ DB[(数据库)]
+ subgraph 接口适配层
+ Controllers
+ Presenters
+ subgraph 用例层
+ UseCases
+ subgraph 实体层
+ Entities
+ end
+ end
+ end
+ end
+
+ Web --&amp;gt; Controllers
+ Controllers --&amp;gt; UseCases
+ UseCases --&amp;gt; Entities
+ Presenters --&amp;gt; UseCases
+ DB -.-&amp;gt; Entities
+&lt;/pre>
+&lt;h3 id="21-分层结构同心圆模型">2.1 分层结构（同心圆模型） &lt;a href="#21-%e5%88%86%e5%b1%82%e7%bb%93%e6%9e%84%e5%90%8c%e5%bf%83%e5%9c%86%e6%a8%a1%e5%9e%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;h4 id="分层说明">分层说明： &lt;a href="#%e5%88%86%e5%b1%82%e8%af%b4%e6%98%8e" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>实体层（Entities）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>包含核心业务对象与规则&lt;/li>
+&lt;li>示例：订单实体、用户实体及其验证规则&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>用例层（Use Cases）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>实现具体业务场景的交互逻辑&lt;/li>
+&lt;li>示例：&amp;ldquo;创建订单&amp;quot;流程、&amp;ldquo;支付处理&amp;quot;流程&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>接口适配层（Interface Adapters）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>转换数据格式适配不同协议&lt;/li>
+&lt;li>包含：控制器、网关、数据映射器&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>框架层（Frameworks &amp;amp; Drivers）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>技术实现细节：数据库、Web框架、UI组件&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;h3 id="22-依赖规则">2.2 依赖规则 &lt;a href="#22-%e4%be%9d%e8%b5%96%e8%a7%84%e5%88%99" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>向内依赖原则&lt;/strong>：外层可以依赖内层，反之禁止&lt;/li>
+&lt;li>抽象接口定义在内层，具体实现放在外层&lt;/li>
+&lt;li>数据流向：从外层到内层必须经过边界接口&lt;/li>
+&lt;/ul>
+&lt;h2 id="3-解决的关键问题">3. 解决的关键问题 &lt;a href="#3-%e8%a7%a3%e5%86%b3%e7%9a%84%e5%85%b3%e9%94%ae%e9%97%ae%e9%a2%98" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>问题类型&lt;/th>
+ &lt;th>传统架构痛点&lt;/th>
+ &lt;th>简洁架构解决方案&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>代码耦合度&lt;/td>
+ &lt;td>业务逻辑与技术实现深度耦合&lt;/td>
+ &lt;td>通过分层强制解耦&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>可维护性&lt;/td>
+ &lt;td>修改框架导致业务逻辑变动&lt;/td>
+ &lt;td>业务核心保持技术中立&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>测试复杂度&lt;/td>
+ &lt;td>需要启动完整环境才能测试&lt;/td>
+ &lt;td>核心层可脱离框架独立测试&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>技术锁定&lt;/td>
+ &lt;td>更换技术栈成本极高&lt;/td>
+ &lt;td>通过接口适配实现灵活替换&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="4-具体实现示例">4. 具体实现示例 &lt;a href="#4-%e5%85%b7%e4%bd%93%e5%ae%9e%e7%8e%b0%e7%a4%ba%e4%be%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="41-代码结构">4.1 代码结构 &lt;a href="#41-%e4%bb%a3%e7%a0%81%e7%bb%93%e6%9e%84" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="326dc47" class="language-python ">
+ &lt;code># 实体层
+class Order:
+ def __init__(self, items: list, total: float):
+ self._validate(items, total)
+ 
+ def _validate(self, items, total):
+ # 核心业务规则实现
+
+# 用例层
+class CreateOrderUseCase:
+ def __init__(self, order_repo: OrderRepository):
+ self.repo = order_repo
+ 
+ def execute(self, items):
+ order = Order(items)
+ return self.repo.save(order)
+
+# 接口适配层（实现内层定义的抽象接口）
+class SQLOrderRepository:
+ def save(self, order):
+ # 数据库具体实现
+
+# 框架层（FastAPI示例）
+@app.post(&amp;#34;/orders&amp;#34;)
+def create_order(items: list):
+ repo = SQLOrderRepository()
+ use_case = CreateOrderUseCase(repo)
+ return use_case.execute(items)&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;h3 id="42-依赖管理">4.2 依赖管理 &lt;a href="#42-%e4%be%9d%e8%b5%96%e7%ae%a1%e7%90%86" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;pre class="mermaid">graph TD
+ A[Web框架] --&amp;gt;|依赖| B[接口适配器]
+ B --&amp;gt;|实现| C[用例层接口]
+ C --&amp;gt;|依赖| D[实体层]
+&lt;/pre>
+&lt;h2 id="5-类似架构思想对比">5. 类似架构思想对比 &lt;a href="#5-%e7%b1%bb%e4%bc%bc%e6%9e%b6%e6%9e%84%e6%80%9d%e6%83%b3%e5%af%b9%e6%af%94" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>架构类型&lt;/th>
+ &lt;th>核心差异点&lt;/th>
+ &lt;th>适用场景&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>分层架构&lt;/td>
+ &lt;td>水平分层 vs 同心圆分层&lt;/td>
+ &lt;td>传统企业应用&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>六边形架构&lt;/td>
+ &lt;td>端口-适配器模式更明确&lt;/td>
+ &lt;td>高交互性系统&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>DDD&lt;/td>
+ &lt;td>强调领域建模而非结构约束&lt;/td>
+ &lt;td>复杂业务系统&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>洋葱架构&lt;/td>
+ &lt;td>类似分层但强调领域服务层&lt;/td>
+ &lt;td>长期演进的中大型系统&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="6-优势与挑战">6. 优势与挑战 &lt;a href="#6-%e4%bc%98%e5%8a%bf%e4%b8%8e%e6%8c%91%e6%88%98" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>✅ 核心优势：&lt;/p></description></item><item><title>C4 Diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/c4/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/c4/</guid><description>&lt;h1 id="c4-diagrams">C4 Diagrams &lt;a href="#c4-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>C4 Diagram: This is an experimental diagram for now. The syntax and properties can change in future releases. Proper documentation will be provided when the syntax is stable.&lt;/p>&lt;/blockquote>
+&lt;p>Mermaid&amp;rsquo;s C4 diagram syntax is compatible with plantUML. See example below:&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="5f1ac66" class="language-mermaid-example ">
+ &lt;code> C4Context
+ title System Context diagram for Internet Banking System
+ Enterprise_Boundary(b0, &amp;#34;BankBoundary0&amp;#34;) {
+ Person(customerA, &amp;#34;Banking Customer A&amp;#34;, &amp;#34;A customer of the bank, with personal bank accounts.&amp;#34;)
+ Person(customerB, &amp;#34;Banking Customer B&amp;#34;)
+ Person_Ext(customerC, &amp;#34;Banking Customer C&amp;#34;, &amp;#34;desc&amp;#34;)
+
+ Person(customerD, &amp;#34;Banking Customer D&amp;#34;, &amp;#34;A customer of the bank, &amp;lt;br/&amp;gt; with personal bank accounts.&amp;#34;)
+
+ System(SystemAA, &amp;#34;Internet Banking System&amp;#34;, &amp;#34;Allows customers to view information about their bank accounts, and make payments.&amp;#34;)
+
+ Enterprise_Boundary(b1, &amp;#34;BankBoundary&amp;#34;) {
+
+ SystemDb_Ext(SystemE, &amp;#34;Mainframe Banking System&amp;#34;, &amp;#34;Stores all of the core banking information about customers, accounts, transactions, etc.&amp;#34;)
+
+ System_Boundary(b2, &amp;#34;BankBoundary2&amp;#34;) {
+ System(SystemA, &amp;#34;Banking System A&amp;#34;)
+ System(SystemB, &amp;#34;Banking System B&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts. next line.&amp;#34;)
+ }
+
+ System_Ext(SystemC, &amp;#34;E-mail system&amp;#34;, &amp;#34;The internal Microsoft Exchange e-mail system.&amp;#34;)
+ SystemDb(SystemD, &amp;#34;Banking System D Database&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts.&amp;#34;)
+
+ Boundary(b3, &amp;#34;BankBoundary3&amp;#34;, &amp;#34;boundary&amp;#34;) {
+ SystemQueue(SystemF, &amp;#34;Banking System F Queue&amp;#34;, &amp;#34;A system of the bank.&amp;#34;)
+ SystemQueue_Ext(SystemG, &amp;#34;Banking System G Queue&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts.&amp;#34;)
+ }
+ }
+ }
+
+ BiRel(customerA, SystemAA, &amp;#34;Uses&amp;#34;)
+ BiRel(SystemAA, SystemE, &amp;#34;Uses&amp;#34;)
+ Rel(SystemAA, SystemC, &amp;#34;Sends e-mails&amp;#34;, &amp;#34;SMTP&amp;#34;)
+ Rel(SystemC, customerA, &amp;#34;Sends e-mails to&amp;#34;)
+
+ UpdateElementStyle(customerA, $fontColor=&amp;#34;red&amp;#34;, $bgColor=&amp;#34;grey&amp;#34;, $borderColor=&amp;#34;red&amp;#34;)
+ UpdateRelStyle(customerA, SystemAA, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetX=&amp;#34;5&amp;#34;)
+ UpdateRelStyle(SystemAA, SystemE, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetY=&amp;#34;-10&amp;#34;)
+ UpdateRelStyle(SystemAA, SystemC, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetY=&amp;#34;-40&amp;#34;, $offsetX=&amp;#34;-50&amp;#34;)
+ UpdateRelStyle(SystemC, customerA, $textColor=&amp;#34;red&amp;#34;, $lineColor=&amp;#34;red&amp;#34;, $offsetX=&amp;#34;-50&amp;#34;, $offsetY=&amp;#34;20&amp;#34;)
+
+ UpdateLayoutConfig($c4ShapeInRow=&amp;#34;3&amp;#34;, $c4BoundaryInRow=&amp;#34;1&amp;#34;)&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid"> C4Context
+ title System Context diagram for Internet Banking System
+ Enterprise_Boundary(b0, &amp;#34;BankBoundary0&amp;#34;) {
+ Person(customerA, &amp;#34;Banking Customer A&amp;#34;, &amp;#34;A customer of the bank, with personal bank accounts.&amp;#34;)
+ Person(customerB, &amp;#34;Banking Customer B&amp;#34;)
+ Person_Ext(customerC, &amp;#34;Banking Customer C&amp;#34;, &amp;#34;desc&amp;#34;)
+
+ Person(customerD, &amp;#34;Banking Customer D&amp;#34;, &amp;#34;A customer of the bank, &amp;lt;br/&amp;gt; with personal bank accounts.&amp;#34;)
+
+ System(SystemAA, &amp;#34;Internet Banking System&amp;#34;, &amp;#34;Allows customers to view information about their bank accounts, and make payments.&amp;#34;)
+
+ Enterprise_Boundary(b1, &amp;#34;BankBoundary&amp;#34;) {
+
+ SystemDb_Ext(SystemE, &amp;#34;Mainframe Banking System&amp;#34;, &amp;#34;Stores all of the core banking information about customers, accounts, transactions, etc.&amp;#34;)
+
+ System_Boundary(b2, &amp;#34;BankBoundary2&amp;#34;) {
+ System(SystemA, &amp;#34;Banking System A&amp;#34;)
+ System(SystemB, &amp;#34;Banking System B&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts. next line.&amp;#34;)
+ }
+
+ System_Ext(SystemC, &amp;#34;E-mail system&amp;#34;, &amp;#34;The internal Microsoft Exchange e-mail system.&amp;#34;)
+ SystemDb(SystemD, &amp;#34;Banking System D Database&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts.&amp;#34;)
+
+ Boundary(b3, &amp;#34;BankBoundary3&amp;#34;, &amp;#34;boundary&amp;#34;) {
+ SystemQueue(SystemF, &amp;#34;Banking System F Queue&amp;#34;, &amp;#34;A system of the bank.&amp;#34;)
+ SystemQueue_Ext(SystemG, &amp;#34;Banking System G Queue&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts.&amp;#34;)
+ }
+ }
+ }
+
+ BiRel(customerA, SystemAA, &amp;#34;Uses&amp;#34;)
+ BiRel(SystemAA, SystemE, &amp;#34;Uses&amp;#34;)
+ Rel(SystemAA, SystemC, &amp;#34;Sends e-mails&amp;#34;, &amp;#34;SMTP&amp;#34;)
+ Rel(SystemC, customerA, &amp;#34;Sends e-mails to&amp;#34;)
+
+ UpdateElementStyle(customerA, $fontColor=&amp;#34;red&amp;#34;, $bgColor=&amp;#34;grey&amp;#34;, $borderColor=&amp;#34;red&amp;#34;)
+ UpdateRelStyle(customerA, SystemAA, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetX=&amp;#34;5&amp;#34;)
+ UpdateRelStyle(SystemAA, SystemE, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetY=&amp;#34;-10&amp;#34;)
+ UpdateRelStyle(SystemAA, SystemC, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetY=&amp;#34;-40&amp;#34;, $offsetX=&amp;#34;-50&amp;#34;)
+ UpdateRelStyle(SystemC, customerA, $textColor=&amp;#34;red&amp;#34;, $lineColor=&amp;#34;red&amp;#34;, $offsetX=&amp;#34;-50&amp;#34;, $offsetY=&amp;#34;20&amp;#34;)
+
+ UpdateLayoutConfig($c4ShapeInRow=&amp;#34;3&amp;#34;, $c4BoundaryInRow=&amp;#34;1&amp;#34;)
+&lt;/pre>
+&lt;p>For an example, see the source code demos/index.html&lt;/p></description></item><item><title>Class diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/classdiagram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/classdiagram/</guid><description>&lt;h1 id="class-diagrams">Class diagrams &lt;a href="#class-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>&amp;ldquo;In software engineering, a class diagram in the Unified Modeling Language (UML) is a type of static structure diagram that describes the structure of a system by showing the system&amp;rsquo;s classes, their attributes, operations (or methods), and the relationships among objects.&amp;rdquo;&lt;/p>
+&lt;p>-Wikipedia&lt;/p>&lt;/blockquote>
+&lt;p>The class diagram is the main building block of object-oriented modeling. It is used for general conceptual modeling of the structure of the application, and for detailed modeling to translate the models into programming code. Class diagrams can also be used for data modeling. The classes in a class diagram represent both the main elements, interactions in the application, and the classes to be programmed.&lt;/p></description></item><item><title>Entity Relationship Diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/entityrelationshipdiagram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/entityrelationshipdiagram/</guid><description>&lt;h1 id="entity-relationship-diagrams">Entity Relationship Diagrams &lt;a href="#entity-relationship-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>An entity–relationship model (or ER model) describes interrelated things of interest in a specific domain of knowledge. A basic ER model is composed of entity types (which classify the things of interest) and specifies relationships that can exist between entities (instances of those entity types). Wikipedia.&lt;/p>&lt;/blockquote>
+&lt;p>Note that practitioners of ER modelling almost always refer to &lt;em>entity types&lt;/em> simply as &lt;em>entities&lt;/em>. For example the &lt;code>CUSTOMER&lt;/code> entity &lt;em>type&lt;/em> would be referred to simply as the &lt;code>CUSTOMER&lt;/code> entity. This is so common it would be inadvisable to do anything else, but technically an entity is an abstract &lt;em>instance&lt;/em> of an entity type, and this is what an ER diagram shows - abstract instances, and the relationships between them. This is why entities are always named using singular nouns.&lt;/p></description></item><item><title>Examples</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/examples/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/examples/</guid><description>&lt;h1 id="examples">Examples &lt;a href="#examples" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>This page contains a collection of examples of diagrams and charts that can be created through mermaid and its myriad applications.&lt;/p>
+&lt;p>&lt;strong>If you wish to learn how to support mermaid on your webpage, read the &lt;a href="../config/usage.md?id=usage">Beginner&amp;rsquo;s Guide&lt;/a>.&lt;/strong>&lt;/p>
+&lt;p>&lt;strong>If you wish to learn about mermaid&amp;rsquo;s syntax, Read the &lt;a data-bs-delay="{&amp;#34;hide&amp;#34;:300,&amp;#34;show&amp;#34;:550}" data-bs-html="true" data-bs-title="&lt;a href='https://blahvalf.github.io/docs/mix/mermaid/syntax/flowchart/'>&lt;p>MERMAID@V10.6.1 SYNTAX&lt;/p>&lt;strong>Flowcharts - Basic Syntax&lt;/strong>&lt;br>&lt;/a>" data-bs-toggle="tooltip" href="https://blahvalf.github.io/docs/mix/mermaid/syntax/flowchart/?id=flowcharts-basic-syntax">Diagram Syntax&lt;/a> section.&lt;/strong>&lt;/p>
+&lt;h2 id="basic-pie-chart">Basic Pie Chart &lt;a href="#basic-pie-chart" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="f8b253f" class="language-mermaid-example ">
+ &lt;code>pie title NETFLIX
+ &amp;#34;Time spent looking for movie&amp;#34; : 90
+ &amp;#34;Time spent watching it&amp;#34; : 10&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">pie title NETFLIX
+ &amp;#34;Time spent looking for movie&amp;#34; : 90
+ &amp;#34;Time spent watching it&amp;#34; : 10
+&lt;/pre>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="cd5f60d" class="language-mermaid-example ">
+ &lt;code>pie title What Voldemort doesn&amp;#39;t have?
+ &amp;#34;FRIENDS&amp;#34; : 2
+ &amp;#34;FAMILY&amp;#34; : 3
+ &amp;#34;NOSE&amp;#34; : 45&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">pie title What Voldemort doesn&amp;#39;t have?
+ &amp;#34;FRIENDS&amp;#34; : 2
+ &amp;#34;FAMILY&amp;#34; : 3
+ &amp;#34;NOSE&amp;#34; : 45
+&lt;/pre>
+&lt;h2 id="basic-sequence-diagram">Basic sequence diagram &lt;a href="#basic-sequence-diagram" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="2ddbfd1" class="language-mermaid-example ">
+ &lt;code>sequenceDiagram
+ Alice -&amp;gt;&amp;gt; Bob: Hello Bob, how are you?
+ Bob--&amp;gt;&amp;gt;John: How about you John?
+ Bob--x Alice: I am good thanks!
+ Bob-x John: I am good thanks!
+ Note right of John: Bob thinks a long&amp;lt;br/&amp;gt;long time, so long&amp;lt;br/&amp;gt;that the text does&amp;lt;br/&amp;gt;not fit on a row.
+
+ Bob--&amp;gt;Alice: Checking with John...
+ Alice-&amp;gt;John: Yes... John, how are you?&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">sequenceDiagram
+ Alice -&amp;gt;&amp;gt; Bob: Hello Bob, how are you?
+ Bob--&amp;gt;&amp;gt;John: How about you John?
+ Bob--x Alice: I am good thanks!
+ Bob-x John: I am good thanks!
+ Note right of John: Bob thinks a long&amp;lt;br/&amp;gt;long time, so long&amp;lt;br/&amp;gt;that the text does&amp;lt;br/&amp;gt;not fit on a row.
+
+ Bob--&amp;gt;Alice: Checking with John...
+ Alice-&amp;gt;John: Yes... John, how are you?
+&lt;/pre>
+&lt;h2 id="basic-flowchart">Basic flowchart &lt;a href="#basic-flowchart" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="e592583" class="language-mermaid-example ">
+ &lt;code>graph LR
+ A[Square Rect] -- Link text --&amp;gt; B((Circle))
+ A --&amp;gt; C(Round Rect)
+ B --&amp;gt; D{Rhombus}
+ C --&amp;gt; D&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">graph LR
+ A[Square Rect] -- Link text --&amp;gt; B((Circle))
+ A --&amp;gt; C(Round Rect)
+ B --&amp;gt; D{Rhombus}
+ C --&amp;gt; D
+&lt;/pre>
+&lt;h2 id="larger-flowchart-with-some-styling">Larger flowchart with some styling &lt;a href="#larger-flowchart-with-some-styling" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="d4f2484" class="language-mermaid-example ">
+ &lt;code>graph TB
+ sq[Square shape] --&amp;gt; ci((Circle shape))
+
+ subgraph A
+ od&amp;gt;Odd shape]-- Two line&amp;lt;br/&amp;gt;edge comment --&amp;gt; ro
+ di{Diamond with &amp;lt;br/&amp;gt; line break} -.-&amp;gt; ro(Rounded&amp;lt;br&amp;gt;square&amp;lt;br&amp;gt;shape)
+ di==&amp;gt;ro2(Rounded square shape)
+ end
+
+ %% Notice that no text in shape are added here instead that is appended further down
+ e --&amp;gt; od3&amp;gt;Really long text with linebreak&amp;lt;br&amp;gt;in an Odd shape]
+
+ %% Comments after double percent signs
+ e((Inner / circle&amp;lt;br&amp;gt;and some odd &amp;lt;br&amp;gt;special characters)) --&amp;gt; f(,.?!&amp;#43;-*ز)
+
+ cyr[Cyrillic]--&amp;gt;cyr2((Circle shape Начало));
+
+ classDef green fill:#9f6,stroke:#333,stroke-width:2px;
+ classDef orange fill:#f96,stroke:#333,stroke-width:4px;
+ class sq,e green
+ class di orange&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">graph TB
+ sq[Square shape] --&amp;gt; ci((Circle shape))
+
+ subgraph A
+ od&amp;gt;Odd shape]-- Two line&amp;lt;br/&amp;gt;edge comment --&amp;gt; ro
+ di{Diamond with &amp;lt;br/&amp;gt; line break} -.-&amp;gt; ro(Rounded&amp;lt;br&amp;gt;square&amp;lt;br&amp;gt;shape)
+ di==&amp;gt;ro2(Rounded square shape)
+ end
+
+ %% Notice that no text in shape are added here instead that is appended further down
+ e --&amp;gt; od3&amp;gt;Really long text with linebreak&amp;lt;br&amp;gt;in an Odd shape]
+
+ %% Comments after double percent signs
+ e((Inner / circle&amp;lt;br&amp;gt;and some odd &amp;lt;br&amp;gt;special characters)) --&amp;gt; f(,.?!&amp;#43;-*ز)
+
+ cyr[Cyrillic]--&amp;gt;cyr2((Circle shape Начало));
+
+ classDef green fill:#9f6,stroke:#333,stroke-width:2px;
+ classDef orange fill:#f96,stroke:#333,stroke-width:4px;
+ class sq,e green
+ class di orange
+&lt;/pre>
+&lt;h2 id="sequencediagram-loops-alt-and-opt">SequenceDiagram: Loops, alt and opt &lt;a href="#sequencediagram-loops-alt-and-opt" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="df6ff2c" class="language-mermaid-example ">
+ &lt;code>sequenceDiagram
+ loop Daily query
+ Alice-&amp;gt;&amp;gt;Bob: Hello Bob, how are you?
+ alt is sick
+ Bob-&amp;gt;&amp;gt;Alice: Not so good :(
+ else is well
+ Bob-&amp;gt;&amp;gt;Alice: Feeling fresh like a daisy
+ end
+
+ opt Extra response
+ Bob-&amp;gt;&amp;gt;Alice: Thanks for asking
+ end
+ end&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">sequenceDiagram
+ loop Daily query
+ Alice-&amp;gt;&amp;gt;Bob: Hello Bob, how are you?
+ alt is sick
+ Bob-&amp;gt;&amp;gt;Alice: Not so good :(
+ else is well
+ Bob-&amp;gt;&amp;gt;Alice: Feeling fresh like a daisy
+ end
+
+ opt Extra response
+ Bob-&amp;gt;&amp;gt;Alice: Thanks for asking
+ end
+ end
+&lt;/pre>
+&lt;h2 id="sequencediagram-message-to-self-in-loop">SequenceDiagram: Message to self in loop &lt;a href="#sequencediagram-message-to-self-in-loop" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="209efa0" class="language-mermaid-example ">
+ &lt;code>sequenceDiagram
+ participant Alice
+ participant Bob
+ Alice-&amp;gt;&amp;gt;John: Hello John, how are you?
+ loop Healthcheck
+ John-&amp;gt;&amp;gt;John: Fight against hypochondria
+ end
+ Note right of John: Rational thoughts&amp;lt;br/&amp;gt;prevail...
+ John--&amp;gt;&amp;gt;Alice: Great!
+ John-&amp;gt;&amp;gt;Bob: How about you?
+ Bob--&amp;gt;&amp;gt;John: Jolly good!&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">sequenceDiagram
+ participant Alice
+ participant Bob
+ Alice-&amp;gt;&amp;gt;John: Hello John, how are you?
+ loop Healthcheck
+ John-&amp;gt;&amp;gt;John: Fight against hypochondria
+ end
+ Note right of John: Rational thoughts&amp;lt;br/&amp;gt;prevail...
+ John--&amp;gt;&amp;gt;Alice: Great!
+ John-&amp;gt;&amp;gt;Bob: How about you?
+ Bob--&amp;gt;&amp;gt;John: Jolly good!
+&lt;/pre>
+&lt;h2 id="sequence-diagram-blogging-app-service-communication">Sequence Diagram: Blogging app service communication &lt;a href="#sequence-diagram-blogging-app-service-communication" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="6967eec" class="language-mermaid-example ">
+ &lt;code>sequenceDiagram
+ participant web as Web Browser
+ participant blog as Blog Service
+ participant account as Account Service
+ participant mail as Mail Service
+ participant db as Storage
+
+ Note over web,db: The user must be logged in to submit blog posts
+ web-&amp;gt;&amp;gt;&amp;#43;account: Logs in using credentials
+ account-&amp;gt;&amp;gt;db: Query stored accounts
+ db-&amp;gt;&amp;gt;account: Respond with query result
+
+ alt Credentials not found
+ account-&amp;gt;&amp;gt;web: Invalid credentials
+ else Credentials found
+ account-&amp;gt;&amp;gt;-web: Successfully logged in
+
+ Note over web,db: When the user is authenticated, they can now submit new posts
+ web-&amp;gt;&amp;gt;&amp;#43;blog: Submit new post
+ blog-&amp;gt;&amp;gt;db: Store post data
+
+ par Notifications
+ blog--)mail: Send mail to blog subscribers
+ blog--)db: Store in-site notifications
+ and Response
+ blog--&amp;gt;&amp;gt;-web: Successfully posted
+ end
+ end&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">sequenceDiagram
+ participant web as Web Browser
+ participant blog as Blog Service
+ participant account as Account Service
+ participant mail as Mail Service
+ participant db as Storage
+
+ Note over web,db: The user must be logged in to submit blog posts
+ web-&amp;gt;&amp;gt;&amp;#43;account: Logs in using credentials
+ account-&amp;gt;&amp;gt;db: Query stored accounts
+ db-&amp;gt;&amp;gt;account: Respond with query result
+
+ alt Credentials not found
+ account-&amp;gt;&amp;gt;web: Invalid credentials
+ else Credentials found
+ account-&amp;gt;&amp;gt;-web: Successfully logged in
+
+ Note over web,db: When the user is authenticated, they can now submit new posts
+ web-&amp;gt;&amp;gt;&amp;#43;blog: Submit new post
+ blog-&amp;gt;&amp;gt;db: Store post data
+
+ par Notifications
+ blog--)mail: Send mail to blog subscribers
+ blog--)db: Store in-site notifications
+ and Response
+ blog--&amp;gt;&amp;gt;-web: Successfully posted
+ end
+ end
+&lt;/pre>
+&lt;h2 id="a-commit-flow-diagram">A commit flow diagram. &lt;a href="#a-commit-flow-diagram" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="fdae4d6" class="language-mermaid-example ">
+ &lt;code>gitGraph:
+ commit &amp;#34;Ashish&amp;#34;
+ branch newbranch
+ checkout newbranch
+ commit id:&amp;#34;1111&amp;#34;
+ commit tag:&amp;#34;test&amp;#34;
+ checkout main
+ commit type: HIGHLIGHT
+ commit
+ merge newbranch
+ commit
+ branch b2
+ commit&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">gitGraph:
+ commit &amp;#34;Ashish&amp;#34;
+ branch newbranch
+ checkout newbranch
+ commit id:&amp;#34;1111&amp;#34;
+ commit tag:&amp;#34;test&amp;#34;
+ checkout main
+ commit type: HIGHLIGHT
+ commit
+ merge newbranch
+ commit
+ branch b2
+ commit
+&lt;/pre></description></item><item><title>Flowcharts - Basic Syntax</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/flowchart/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/flowchart/</guid><description>&lt;h1 id="flowcharts---basic-syntax">Flowcharts - Basic Syntax &lt;a href="#flowcharts---basic-syntax" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>Flowcharts are composed of &lt;strong>nodes&lt;/strong> (geometric shapes) and &lt;strong>edges&lt;/strong> (arrows or lines). The Mermaid code defines how nodes and edges are made and accommodates different arrow types, multi-directional arrows, and any linking to and from subgraphs.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>Warning&lt;/strong>
+If you are using the word &amp;ldquo;end&amp;rdquo; in a Flowchart node, capitalize the entire word or any of the letters (e.g., &amp;ldquo;End&amp;rdquo; or &amp;ldquo;END&amp;rdquo;), or apply this &lt;a href="https://github.com/mermaid-js/mermaid/issues/1444#issuecomment-639528897" rel="external" target="_blank">workaround&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>. Typing &amp;ldquo;end&amp;rdquo; in all lowercase letters will break the Flowchart.&lt;/p></description></item><item><title>Gantt diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/gantt/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/gantt/</guid><description>&lt;h1 id="gantt-diagrams">Gantt diagrams &lt;a href="#gantt-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A Gantt chart is a type of bar chart, first developed by Karol Adamiecki in 1896, and independently by Henry Gantt in the 1910s, that illustrates a project schedule and the amount of time it would take for any one project to finish. Gantt charts illustrate number of days between the start and finish dates of the terminal elements and summary elements of a project.&lt;/p>&lt;/blockquote>
+&lt;h2 id="a-note-to-users">A note to users &lt;a href="#a-note-to-users" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Gantt Charts will record each scheduled task as one continuous bar that extends from the left to the right. The x axis represents time and the y records the different tasks and the order in which they are to be completed.&lt;/p></description></item><item><title>Gitgraph Diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/gitgraph/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/gitgraph/</guid><description>&lt;h1 id="gitgraph-diagrams">Gitgraph Diagrams &lt;a href="#gitgraph-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A Git Graph is a pictorial representation of git commits and git actions(commands) on various branches.&lt;/p>&lt;/blockquote>
+&lt;p>These kind of diagram are particularly helpful to developers and devops teams to share their Git branching strategies. For example, it makes it easier to visualize how git flow works.&lt;/p>
+&lt;p>Mermaid can render Git diagrams&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="4aa8f13" class="language-mermaid-example ">
+ &lt;code>---
+title: Example Git diagram
+---
+gitGraph
+ commit
+ commit
+ branch develop
+ checkout develop
+ commit
+ commit
+ checkout main
+ merge develop
+ commit
+ commit&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">---
+title: Example Git diagram
+---
+gitGraph
+ commit
+ commit
+ branch develop
+ checkout develop
+ commit
+ commit
+ checkout main
+ merge develop
+ commit
+ commit
+&lt;/pre>
+&lt;p>In Mermaid, we support the basic git operations like:&lt;/p></description></item><item><title>Mindmap</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/mindmap/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/mindmap/</guid><description>&lt;h1 id="mindmap">Mindmap &lt;a href="#mindmap" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>Mindmap: This is an experimental diagram for now. The syntax and properties can change in future releases. The syntax is stable except for the icon integration which is the experimental part.&lt;/p>&lt;/blockquote>
+&lt;p>&amp;ldquo;A mind map is a diagram used to visually organize information into a hierarchy, showing relationships among pieces of the whole. It is often created around a single concept, drawn as an image in the center of a blank page, to which associated representations of ideas such as images, words and parts of words are added. Major ideas are connected directly to the central concept, and other ideas branch out from those major ideas.&amp;rdquo; Wikipedia&lt;/p></description></item><item><title>Pie chart diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/pie/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/pie/</guid><description>&lt;h1 id="pie-chart-diagrams">Pie chart diagrams &lt;a href="#pie-chart-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A pie chart (or a circle chart) is a circular statistical graphic, which is divided into slices to illustrate numerical proportion. In a pie chart, the arc length of each slice (and consequently its central angle and area), is proportional to the quantity it represents. While it is named for its resemblance to a pie which has been sliced, there are variations on the way it can be presented. The earliest known pie chart is generally credited to William Playfair&amp;rsquo;s Statistical Breviary of 1801
+-Wikipedia&lt;/p></description></item><item><title>Quadrant Chart</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/quadrantchart/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/quadrantchart/</guid><description>&lt;h1 id="quadrant-chart">Quadrant Chart &lt;a href="#quadrant-chart" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A quadrant chart is a visual representation of data that is divided into four quadrants. It is used to plot data points on a two-dimensional grid, with one variable represented on the x-axis and another variable represented on the y-axis. The quadrants are determined by dividing the chart into four equal parts based on a set of criteria that is specific to the data being analyzed. Quadrant charts are often used to identify patterns and trends in data, and to prioritize actions based on the position of data points within the chart. They are commonly used in business, marketing, and risk management, among other fields.&lt;/p></description></item><item><title>Requirement Diagram</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/requirementdiagram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/requirementdiagram/</guid><description>&lt;h1 id="requirement-diagram">Requirement Diagram &lt;a href="#requirement-diagram" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A Requirement diagram provides a visualization for requirements and their connections, to each other and other documented elements. The modeling specs follow those defined by SysML v1.6.&lt;/p>&lt;/blockquote>
+&lt;p>Rendering requirements is straightforward.&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="097e04f" class="language-mermaid-example ">
+ &lt;code> requirementDiagram
+
+ requirement test_req {
+ id: 1
+ text: the test text.
+ risk: high
+ verifymethod: test
+ }
+
+ element test_entity {
+ type: simulation
+ }
+
+ test_entity - satisfies -&amp;gt; test_req&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid"> requirementDiagram
+
+ requirement test_req {
+ id: 1
+ text: the test text.
+ risk: high
+ verifymethod: test
+ }
+
+ element test_entity {
+ type: simulation
+ }
+
+ test_entity - satisfies -&amp;gt; test_req
+&lt;/pre>
+&lt;h2 id="syntax">Syntax &lt;a href="#syntax" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>There are three types of components to a requirement diagram: requirement, element, and relationship.&lt;/p></description></item><item><title>Sankey diagram (v10.3.0+)</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/sankey/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/sankey/</guid><description>&lt;h1 id="sankey-diagram-v1030">Sankey diagram (v10.3.0+) &lt;a href="#sankey-diagram-v1030" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A sankey diagram is a visualization used to depict a flow from one set of values to another.&lt;/p>&lt;/blockquote>
+&lt;blockquote>
+&lt;p>&lt;strong>Warning&lt;/strong>
+This is an experimental diagram. Its syntax are very close to plain CSV, but it is to be extended in the nearest future.&lt;/p>&lt;/blockquote>
+&lt;p>The things being connected are called nodes and the connections are called links.&lt;/p>
+&lt;h2 id="example">Example &lt;a href="#example" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>This example taken from &lt;a href="https://observablehq.com/@d3/sankey/2?collection=@d3/d3-sankey" rel="external" target="_blank">observable&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>. It may be rendered a little bit differently, though, in terms of size and colors.&lt;/p></description></item><item><title>Sequence diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/sequencediagram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/sequencediagram/</guid><description>&lt;h1 id="sequence-diagrams">Sequence diagrams &lt;a href="#sequence-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A Sequence diagram is an interaction diagram that shows how processes operate with one another and in what order.&lt;/p>&lt;/blockquote>
+&lt;p>Mermaid can render sequence diagrams.&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="171ed4e" class="language-mermaid-example ">
+ &lt;code>sequenceDiagram
+ Alice-&amp;gt;&amp;gt;John: Hello John, how are you?
+ John--&amp;gt;&amp;gt;Alice: Great!
+ Alice-)John: See you later!&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">sequenceDiagram
+ Alice-&amp;gt;&amp;gt;John: Hello John, how are you?
+ John--&amp;gt;&amp;gt;Alice: Great!
+ Alice-)John: See you later!
+&lt;/pre>
+&lt;blockquote>
+&lt;p>&lt;strong>Note&lt;/strong>
+A note on nodes, the word &amp;ldquo;end&amp;rdquo; could potentially break the diagram, due to the way that the mermaid language is scripted.&lt;/p></description></item><item><title>State diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/statediagram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/statediagram/</guid><description>&lt;h1 id="state-diagrams">State diagrams &lt;a href="#state-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>&amp;ldquo;A state diagram is a type of diagram used in computer science and related fields to describe the behavior of systems.
+State diagrams require that the system described is composed of a finite number of states; sometimes, this is indeed the
+case, while at other times this is a reasonable abstraction.&amp;rdquo; Wikipedia&lt;/p>&lt;/blockquote>
+&lt;p>Mermaid can render state diagrams. The syntax tries to be compliant with the syntax used in plantUml as this will make
+it easier for users to share diagrams between mermaid and plantUml.&lt;/p></description></item><item><title>Timeline Diagram</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/timeline/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/timeline/</guid><description>&lt;h1 id="timeline-diagram">Timeline Diagram &lt;a href="#timeline-diagram" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>Timeline: This is an experimental diagram for now. The syntax and properties can change in future releases. The syntax is stable except for the icon integration which is the experimental part.&lt;/p>&lt;/blockquote>
+&lt;p>&amp;ldquo;A timeline is a type of diagram used to illustrate a chronology of events, dates, or periods of time. It is usually presented graphically to indicate the passing of time, and it is usually organized chronologically. A basic timeline presents a list of events in chronological order, usually using dates as markers. A timeline can also be used to show the relationship between events, such as the relationship between the events of a person&amp;rsquo;s life.&amp;rdquo; Wikipedia&lt;/p></description></item><item><title>User Journey Diagram</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/userjourney/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/userjourney/</guid><description>&lt;h1 id="user-journey-diagram">User Journey Diagram &lt;a href="#user-journey-diagram" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>User journeys describe at a high level of detail exactly what steps different users take to complete a specific task within a system, application or website. This technique shows the current (as-is) user workflow, and reveals areas of improvement for the to-be workflow. (Wikipedia)&lt;/p>&lt;/blockquote>
+&lt;p>Mermaid can render user journey diagrams:&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="0d7d4c5" class="language-mermaid-example ">
+ &lt;code>journey
+ title My working day
+ section Go to work
+ Make tea: 5: Me
+ Go upstairs: 3: Me
+ Do work: 1: Me, Cat
+ section Go home
+ Go downstairs: 5: Me
+ Sit down: 5: Me&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">journey
+ title My working day
+ section Go to work
+ Make tea: 5: Me
+ Go upstairs: 3: Me
+ Do work: 1: Me, Cat
+ section Go home
+ Go downstairs: 5: Me
+ Sit down: 5: Me
+&lt;/pre>
+&lt;p>Each user journey is split into sections, these describe the part of the task
+the user is trying to complete.&lt;/p></description></item><item><title>XY Chart</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/xychart/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/xychart/</guid><description>&lt;h1 id="xy-chart">XY Chart &lt;a href="#xy-chart" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>In the context of mermaid-js, the XY chart is a comprehensive charting module that encompasses various types of charts that utilize both x-axis and y-axis for data representation. Presently, it includes two fundamental chart types: the bar chart and the line chart. These charts are designed to visually display and analyze data that involve two numerical variables.&lt;/p>&lt;/blockquote>
+&lt;blockquote>
+&lt;p>It&amp;rsquo;s important to note that while the current implementation of mermaid-js includes these two chart types, the framework is designed to be dynamic and adaptable. Therefore, it has the capacity for expansion and the inclusion of additional chart types in the future. This means that users can expect an evolving suite of charting options within the XY chart module, catering to various data visualization needs as new chart types are introduced over time.&lt;/p></description></item><item><title>密码学基础</title><link>https://blahvalf.github.io/docs/information/secure/basic_cryptography/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/secure/basic_cryptography/</guid><description>&lt;h1 id="定义与目标">定义与目标 &lt;a href="#%e5%ae%9a%e4%b9%89%e4%b8%8e%e7%9b%ae%e6%a0%87" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>密码学是研究如何保护信息安全的科学。&lt;/p>
+&lt;p>核心目标：&lt;/p>
+&lt;ul>
+&lt;li>机密性（Confidentiality）：确保信息仅能被授权方读取（如加密电子邮件）。&lt;/li>
+&lt;li>完整性（Integrity）：防止信息被篡改（如数字签名验证文件未被修改）。&lt;/li>
+&lt;li>认证性（Authentication）：验证通信双方身份的真实性（如登录密码或生物识别）。&lt;/li>
+&lt;li>不可否认性（Non-repudiation）：防止发送者事后否认其行为（如区块链交易记录）。&lt;/li>
+&lt;/ul>
+&lt;h1 id="分类">分类 &lt;a href="#%e5%88%86%e7%b1%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;ul>
+&lt;li>技术原理分类
+&lt;ul>
+&lt;li>对称密码（Symmetric Cryptography）
+&lt;ul>
+&lt;li>定义：加密与解密使用同一密钥，也称为私钥密码。&lt;/li>
+&lt;li>分组密码：将明文分为固定长度的块进行加密（如AES、DES、3DES）
+&lt;ul>
+&lt;li>结构：Feistel网络（DES）、SPN结构（AES）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>流密码：将明文逐位加密（如RC4、ChaCha20）&lt;/li>
+&lt;li>特点：速度快，适合大数据量加密，但密钥分发困难。&lt;/li>
+&lt;li>应用场景：文件加密（AES）、无线通信（GSM中的A5/1算法）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>非对称密码（Asymmetric Cryptography）
+&lt;ul>
+&lt;li>定义：使用公钥加密、私钥解密，或私钥签名、公钥验证，也称公钥密码。&lt;/li>
+&lt;li>基于数论难题：RSA（大整数分解）、Diffie-Hellman（离散对数）&lt;/li>
+&lt;li>基于椭圆曲线：ECC（椭圆曲线离散对数）&lt;/li>
+&lt;li>特点：解决密钥分发问题，但计算效率低于对称加密。&lt;/li>
+&lt;li>应用场景：数字签名（RSA）、密钥交换（Diffie-Hellman）、证书认证（X.509）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>哈希函数（Hash Function）
+&lt;ul>
+&lt;li>定义：将任意长度输入映射为固定长度的输出（哈希值），具备单向性和抗碰撞性&lt;/li>
+&lt;li>传统哈希：SHA-256（比特币）、SHA-3（Keccak算法）&lt;/li>
+&lt;li>已淘汰算法：MD5（因碰撞攻击被弃用）&lt;/li>
+&lt;li>特点：不可逆，常用于数据完整性验证和密码存储（加盐哈希）&lt;/li>
+&lt;li>应用场景：区块链Merkle树、文件校验&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>功能目标分类
+&lt;ul>
+&lt;li>加密与解密
+&lt;ul>
+&lt;li>目标：保护数据机密性&lt;/li>
+&lt;li>技术：对称加密（AES）、非对称加密（RSA）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>数字签名（Digital Signature）
+&lt;ul>
+&lt;li>目标：实现认证性和不可否认性。&lt;/li>
+&lt;li>流程：发送方用私钥签名，接收方用公钥验证。&lt;/li>
+&lt;li>算法：RSA签名、ECDSA（比特币交易签名）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>消息认证码（MAC）
+&lt;ul>
+&lt;li>目标：验证数据来源和完整性。&lt;/li>
+&lt;li>技术：HMAC（基于哈希的MAC）、CMAC（基于分组密码的MAC）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>密钥交换（Key Exchange）
+&lt;ul>
+&lt;li>目标：安全协商共享密钥&lt;/li>
+&lt;li>算法：Diffie-Hellman、ECDH（椭圆曲线Diffie-Hellman）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>应用场景分类
+&lt;ul>
+&lt;li>网络通信安全
+&lt;ul>
+&lt;li>SSL/TLS：混合使用对称加密（AES）和非对称加密（RSA/ECC）。&lt;/li>
+&lt;li>VPN：IPsec协议中的ESP加密与AH认证。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>区块链与数字货币
+&lt;ul>
+&lt;li>椭圆曲线签名：比特币的ECDSA。&lt;/li>
+&lt;li>零知识证明：Zcash的zk-SNARKs。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>隐私保护技术
+&lt;ul>
+&lt;li>同态加密（Homomorphic Encryption）：允许在加密数据上直接运算（如医疗数据分析）。&lt;/li>
+&lt;li>安全多方计算（MPC）：多方协作计算数据，但各自隐私数据不泄露。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h1 id="古典密码">古典密码 &lt;a href="#%e5%8f%a4%e5%85%b8%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>古典密码学主要关注信息的保密书写和传递，以及与其相对应的破译方法。&lt;/p>
+&lt;ul>
+&lt;li>理解密码学基础：揭示加密核心思想（混淆与扩散），为现代密码学（如AES的S盒设计）奠定基础。&lt;/li>
+&lt;li>掌握密码分析入门：频率分析、卡西斯基试验等攻击方法，是密码分析思维的起点。&lt;/li>
+&lt;/ul>
+&lt;h2 id="替换密码">替换密码 &lt;a href="#%e6%9b%bf%e6%8d%a2%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>原理：将明文中的字符替换为另一字符（或符号）。&lt;/p>
+&lt;p>典型设计：&lt;/p></description></item><item><title>现代密码学</title><link>https://blahvalf.github.io/docs/information/secure/modern_cryptography/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/secure/modern_cryptography/</guid><description/></item></channel></rss>

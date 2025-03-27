@@ -1,6 +1,6 @@
 ---
 weight: 3
 title: "经济"
-icon: "edit"
+icon: "moving"
 draft: false
 ---

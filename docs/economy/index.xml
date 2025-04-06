@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>经济 on My New Hugo Site</title><link>https://blahvalf.github.io/docs/economy/</link><description>Recent content in 经济 on My New Hugo Site</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://blahvalf.github.io/docs/economy/index.xml" rel="self" type="application/rss+xml"/><item><title>微观经济学基础</title><link>https://blahvalf.github.io/docs/economy/microeconomics_base/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/economy/microeconomics_base/</guid><description>&lt;p>曼昆的《经济学原理》作为经济学领域的经典教材，以其清晰的逻辑框架和生动的现实案例，为无数经济学学习者打开了微观经济学的大门。本文将以曼昆的微观经济学分册为基础，系统梳理微观经济学的核心概念与原理，从经济学十大原理这一基础框架出发，逐步深入到市场运行机制、消费者与生产者行为分析、不同市场结构下的企业决策，以及市场失灵与政府干预等重要议题。每个部分都将结合现实案例进行阐释，帮助读者理解这些抽象理论如何解释我们日常生活中的经济现象。通过这篇总结，读者不仅能够掌握微观经济学的基础知识体系，还能学会像经济学家一样思考现实世界中的资源配置问题。&lt;/p>
+&lt;h2 id="经济学十大原理与基础概念">经济学十大原理与基础概念 &lt;a href="#%e7%bb%8f%e6%b5%8e%e5%ad%a6%e5%8d%81%e5%a4%a7%e5%8e%9f%e7%90%86%e4%b8%8e%e5%9f%ba%e7%a1%80%e6%a6%82%e5%bf%b5" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>经济学作为一门研究稀缺资源配置的社会科学，其核心问题源于一个基本事实：&lt;strong>社会资源是有限的，而人类欲望是无限的&lt;/strong>。曼昆在《经济学原理》开篇即提出了贯穿全书的&amp;quot;经济学十大原理&amp;quot;，这些原理为我们理解个体决策、市场运行和整体经济提供了基本框架。&lt;strong>稀缺性&lt;/strong>（scarcity）是经济学研究的出发点，它指社会拥有的资源有限，无法生产人们希望拥有的所有物品与劳务。正是这种稀缺性的存在，使得人们必须做出选择，从而产生了经济学研究的三个基本问题：生产什么、如何生产和为谁生产。&lt;/p>
+&lt;p>曼昆将十大原理分为三组，分别对应个人决策、人们之间的交易以及整体经济运行。第一组原理关于&lt;strong>个人如何做出决策&lt;/strong>：人们面临权衡取舍（原理一）；某种东西的成本是为了得到它所放弃的东西，即机会成本（原理二）；理性人考虑边际量（原理三）；人们会对激励做出反应（原理四）。以大学生选择学习时间为例，在考试前夕，学生需要在复习和娱乐之间做出权衡（原理一）；选择多玩一小时游戏的成本是少了一小时复习可能导致的成绩下降（原理二）；理性的学生会考虑多复习一小时带来的边际收益是否大于边际成本（原理三）；如果教授宣布考试难度降低，学生可能会减少复习时间，这就是对激励的反应（原理四）。&lt;/p>
+&lt;p>第二组原理探讨&lt;strong>人们之间的相互交易&lt;/strong>：贸易可以使每个人的状况都变得更好（原理五）；市场通常是组织经济活动的一种好方法（原理六）；政府有时可以改善市场结果（原理七）。国际贸易的例子生动说明了这些原理：中国生产服装有比较优势，美国生产飞机有比较优势，两国通过贸易都能以更低的成本获得对方的产品（原理五）；市场价格机制像一只&amp;quot;看不见的手&amp;quot;引导资源流向最有效率的用途（原理六）；但当存在污染等外部性时，政府通过环保法规可以改善市场结果（原理七）。&lt;/p>
+&lt;p>第三组原理涉及&lt;strong>整体经济运行&lt;/strong>：一国的生活水平取决于它生产物品与劳务的能力即生产率（原理八）；货币发行过多导致物价上涨（原理九）；社会面临通货膨胀与失业之间的短期权衡取舍（原理十）。二战后日本和德国的经济奇迹展示了生产率对生活水平的关键作用（原理八）；津巴布韦和委内瑞拉的恶性通货膨胀印证了货币超发的后果（原理九）；而各国央行在经济增长与物价稳定间的政策权衡则体现了菲利普斯曲线的短期交替关系（原理十）。&lt;/p>
+&lt;p>理解这些经济学原理，有助于我们培养&lt;strong>经济学思维方式&lt;/strong>。经济学家使用模型（如循环流向图、生产可能性边界）简化复杂现实，区分实证表述（描述&amp;quot;是什么&amp;quot;）与规范表述（主张&amp;quot;应该是什么&amp;quot;），并通过科学方法分析经济现象。例如，生产可能性边界展示了在资源和技术给定情况下，一个经济体能生产的两种产品的各种组合，以及机会成本随产量变化的关系。假设一个国家只能生产汽车和食品，多生产一辆汽车意味着必须放弃一定数量的食品生产，这种权衡取舍关系正是经济学研究的核心。&lt;/p>
+&lt;pre class="mermaid">mindmap
+ root((经济学原理))
+ 个人决策
+ 原理1: 权衡取舍
+ 原理2: 机会成本
+ 原理3: 边际决策
+ 原理4: 激励反应
+ 交互作用
+ 原理5: 贸易增益
+ 原理6: 市场效率
+ 原理7: 政府职能
+ 整体经济
+ 原理8: 生产率
+ 原理9: 通货膨胀
+ 原理10: 失业通胀交替
+&lt;/pre>
+&lt;h2 id="市场运行机制供给与需求">市场运行机制：供给与需求 &lt;a href="#%e5%b8%82%e5%9c%ba%e8%bf%90%e8%a1%8c%e6%9c%ba%e5%88%b6%e4%be%9b%e7%bb%99%e4%b8%8e%e9%9c%80%e6%b1%82" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>供给与需求模型&lt;/strong>是微观经济学分析市场运行的核心工具，被称为&amp;quot;经济学家的工具箱&amp;quot;。这一模型解释了资源如何通过价格机制在市场经济中进行配置。&lt;strong>市场需求&lt;/strong>指的是在一定时期内，消费者在各种价格水平下愿意且能够购买的商品或服务数量。根据需求定理，在其他条件不变的情况下，商品价格上升会导致需求量减少，反之亦然。这种反向关系可以用需求曲线直观表示：一条从左上方向右下方倾斜的曲线。例如，当智能手机价格从5000元降至3000元时，市场上愿意购买的消费者数量通常会增加。&lt;/p>
+&lt;p>影响需求的因素远不止价格，还包括&lt;strong>消费者偏好&lt;/strong>、收入水平、相关商品价格（替代品和互补品）以及消费者预期等。收入增加会提高对正常商品（如优质肉类、品牌服装）的需求，但减少对低档商品（如方便面、公共交通）的需求。替代品（如茶叶与咖啡）和互补品（如手机与流量套餐）的价格变动也会影响需求：咖啡价格上涨可能导致茶叶需求增加；而流量费下降可能提升智能手机销量。2020年疫情期间，居家办公导致笔记本电脑需求激增，就是一个现实案例。&lt;/p>
+&lt;p>&lt;strong>市场供给&lt;/strong>则指生产者在各种价格水平下愿意且能够提供的商品或服务数量。供给定理表明，价格与供给量之间存在正向关系，这体现为向右上方倾斜的供给曲线。影响供给的因素包括生产成本（原材料价格、工资水平等）、技术水平、生产者数量以及生产者对未来价格的预期。例如，芯片制造技术的进步降低了智能手机生产成本，使厂商在相同价格下愿意供应更多产品；而原油价格上涨预期可能导致石油公司减少当前供应，等待更高价格。&lt;/p>
+&lt;p>当供给与需求力量相互作用时，市场会趋向于&lt;strong>均衡状态&lt;/strong>——供给量与需求量相等时的价格和数量。均衡价格是市场自发调节的结果，此时既无短缺也无过剩。以房地产市场为例，当政府限制购房资格导致需求减少时，需求曲线左移，均衡价格和交易量都会下降；而建筑成本上升使供给曲线左移，将导致价格上升但交易量减少。2022年全球芯片短缺就是典型非均衡状态：疫情后需求激增而供给受限，导致芯片价格飙升，直至2023年供需逐渐恢复平衡。&lt;/p>
+&lt;p>&lt;strong>价格弹性&lt;/strong>衡量供需对价格变动的敏感程度，对企业和政策制定者至关重要。需求价格弹性取决于商品必要性、替代品可获得性、消费占收入比例以及时间跨度。生活必需品（如食盐、药品）通常缺乏弹性，而奢侈品（如高端旅游）弹性较大。企业利用弹性理论制定定价策略：弹性小的商品可适当提价增加收益，而弹性大的商品则可能通过降价扩大市场份额。政府征税时也会考虑弹性——对香烟等缺乏弹性的商品征税，既能增加财政收入又不会大幅减少销量。&lt;/p>
+&lt;p>供给与需求模型的实际应用广泛存在于&lt;strong>政府政策分析&lt;/strong>中。价格管制（如最高限价和最低限价）会干扰市场均衡，导致非效率。租金管制可能造成租房短缺，而农产品最低保护价则可能导致过剩库存。税收负担的实际分配也取决于供需弹性：弹性较小的一方承担更多税负。例如，烟草税主要由消费者承担，因为吸烟者对香烟的需求相对缺乏弹性；而针对旅游服务的税收则更多由供给方承担，因为消费者可以轻易选择不旅游或去其他地方。&lt;/p>
+&lt;p>&lt;em>表：影响需求与供给的因素比较&lt;/em>&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>&lt;strong>类别&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>需求影响因素&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>供给影响因素&lt;/strong>&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;strong>价格因素&lt;/strong>&lt;/td>
+ &lt;td>商品自身价格（需求定理）&lt;/td>
+ &lt;td>商品自身价格（供给定理）&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;strong>非价格因素&lt;/strong>&lt;/td>
+ &lt;td>消费者收入、相关商品价格、偏好、预期、买家数量&lt;/td>
+ &lt;td>生产成本、技术水平、卖家数量、生产者预期、自然条件&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;strong>弹性决定因素&lt;/strong>&lt;/td>
+ &lt;td>替代品可获得性、商品性质（必需品/奢侈品）、消费占比、时间跨度&lt;/td>
+ &lt;td>生产能力调整难度、时间跨度、库存水平、生产要素流动性&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;pre class="mermaid">graph TD
+ subgraph 市场均衡
+ S[供给曲线] --&amp;gt;|价格↑ 供给量↑| E(均衡点)
+ D[需求曲线] --&amp;gt;|价格↑ 需求量↓| E
+ end
+
+ E --&amp;gt; P[均衡价格 P*]
+ E --&amp;gt; Q[均衡数量 Q*]
+
+ P -.-&amp;gt;|价格调节| 动态[市场调节机制]
+ 
+ subgraph 动态[市场调节机制]
+ 高价[价格过高] --&amp;gt; 过剩[供过于求] --&amp;gt; 降价[价格↓] --&amp;gt; E
+ 低价[价格过低] --&amp;gt; 短缺[供不应求] --&amp;gt; 涨价[价格↑] --&amp;gt; E
+ end
+
+ class S,供给曲线 supply
+ class D,需求曲线 demand
+ class E,均衡点 equilibrium
+ class P,Q keynode
+
+ classDef supply fill:#f0f4ff,stroke:#4a90e2
+ classDef demand fill:#fff0f0,stroke:#eb4d4b
+ classDef equilibrium fill:#f8f9fa,stroke:#2ecc71,stroke-width:2px
+ classDef keynode fill:#eaf7ed,stroke:#27ae60
+&lt;/pre>
+&lt;h2 id="消费者行为理论">消费者行为理论 &lt;a href="#%e6%b6%88%e8%b4%b9%e8%80%85%e8%a1%8c%e4%b8%ba%e7%90%86%e8%ae%ba" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>消费者选择理论&lt;/strong>揭示了个人如何在有限收入的约束下做出最优购买决策，以实现满足感最大化。这一理论的核心假设是消费者是理性的，他们会系统性地选择能带来最大效用的商品组合。&lt;strong>效用&lt;/strong>（Utility）是衡量消费者从商品或服务中获得满足程度的抽象概念，可分为基数效用（可计量）和序数效用（可排序）两种理论。虽然我们无法精确测量效用值，但这一概念帮助我们理解消费者偏好和选择行为。&lt;/p></description></item><item><title>宏观经济学基础</title><link>https://blahvalf.github.io/docs/economy/macroeconomics_base/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/economy/macroeconomics_base/</guid><description>&lt;p>宏观经济学作为理解整体经济运行规律的重要学科，奥利维尔·布兰查德的经典教材《宏观经济学》系统性地构建了从短期到长期的分析框架。本文将以布兰查德的宏观经济学体系为基础，详细梳理宏观经济学的核心概念、基础模型和政策应用，通过理论阐释与实例分析相结合的方式，帮助读者建立起完整的宏观经济学知识架构。文章将从宏观经济的基本度量开始，逐步深入到商品市场、金融市场分析，进而探讨劳动力市场与总供给总需求模型，最后延伸至经济增长理论和开放经济下的宏观经济学，每个部分都将配以现实经济案例和数据分析，使抽象理论具象化，复杂模型清晰化。&lt;/p>
+&lt;h2 id="宏观经济的基本概念与度量">宏观经济的基本概念与度量 &lt;a href="#%e5%ae%8f%e8%a7%82%e7%bb%8f%e6%b5%8e%e7%9a%84%e5%9f%ba%e6%9c%ac%e6%a6%82%e5%bf%b5%e4%b8%8e%e5%ba%a6%e9%87%8f" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>国内生产总值(GDP)&lt;strong>作为宏观经济学最核心的度量指标，是指在一定时期内(通常为一个季度或一年)，一个国家或地区经济中所生产出的&lt;/strong>全部最终产品和服务&lt;/strong>的市场价值总和。理解GDP需要把握几个关键特征：它仅包括最终产品价值而排除中间产品以避免重复计算；它是一个市场价值概念，通过货币衡量；仅包含市场活动导致的价值，非市场活动如家务劳动不计入；它是一个流量而非存量概念。GDP的核算主要有三种方法：生产法(总产出减中间投入)、收入法(劳动者报酬+生产税净额+固定资产折旧+营业盈余)和支出法(消费+投资+政府购买+净出口)。&lt;/p>
+&lt;p>&lt;strong>通货膨胀与失业&lt;/strong>是宏观经济运行的两大核心问题。通货膨胀指一般物价水平持续上涨的现象，而通货紧缩则相反。布兰查德特别强调了&lt;strong>滞胀&lt;/strong>这一特殊现象——即高通胀与高失业同时存在的困境，如1970年代石油危机期间西方国家经历的状况。失业率衡量的是劳动力中没有工作但正在积极寻找工作的人口比例，而参与率则是劳动年龄人口中实际参与劳动市场的比例。这些指标共同反映了经济体的健康状况，例如2008年金融危机后，美国失业率一度飙升至10%，反映了经济的严重衰退。&lt;/p>
+&lt;p>&lt;strong>价格指数&lt;/strong>是衡量通胀水平的重要工具。GDP平减指数反映了国内生产的所有最终产品价格变化，而消费者价格指数(CPI)则衡量典型消费者购买的一篮子商品和服务的成本变化。例如，若某年GDP平减指数从100上升至105，则表示总体价格水平上涨了5%。布兰查德还介绍了&lt;strong>购买力平价&lt;/strong>(PPP)理论，该理论认为长期来看汇率会调整至使不同国家一篮子商品价格相等的水平，这解释了为什么人均GDP按市场汇率和按PPP计算会有显著差异，如中国的人均GDP按PPP计算约为美国的六分之一。&lt;/p>
+&lt;p>宏观经济学的分析通常分为三个时间维度：&lt;strong>短期&lt;/strong>关注经济波动和稳定性政策，主要工具是IS-LM模型；&lt;strong>中期&lt;/strong>分析经济如何回归自然产出水平，核心是AS-AD模型；&lt;strong>长期&lt;/strong>则聚焦经济增长的决定因素，索洛模型是基本分析框架。这种时间维度的划分为理解复杂经济现象提供了清晰思路，例如面对2020年新冠疫情冲击时，各国政府首先采取短期稳定措施(如美国的2万亿美元刺激计划)，随后逐步转向中期结构调整，而长期则需考虑疫情对潜在增长的影响。&lt;/p>
+&lt;p>&lt;em>表：GDP核算的三种方法比较&lt;/em>&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>&lt;strong>核算方法&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>基本公式&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>主要构成&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>适用场景&lt;/strong>&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;strong>生产法&lt;/strong>&lt;/td>
+ &lt;td>GDP=总产出-中间投入&lt;/td>
+ &lt;td>各产业部门增加值之和&lt;/td>
+ &lt;td>分析产业结构变化&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;strong>收入法&lt;/strong>&lt;/td>
+ &lt;td>GDP=劳动者报酬+生产税净额+固定资产折旧+营业盈余&lt;/td>
+ &lt;td>生产要素获得的收入&lt;/td>
+ &lt;td>研究收入分配格局&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;strong>支出法&lt;/strong>&lt;/td>
+ &lt;td>GDP=C+I+G+(X-M)&lt;/td>
+ &lt;td>消费、投资、政府购买、净出口&lt;/td>
+ &lt;td>观察需求结构变化&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;p>宏观经济政策的目标通常包括：&lt;strong>稳定物价&lt;/strong>(低通胀)、&lt;strong>充分就业&lt;/strong>、&lt;strong>经济增长&lt;/strong>和&lt;strong>国际收支平衡&lt;/strong>。这些目标之间可能存在冲突，例如短期内刺激就业可能导致通胀压力上升，这正体现了菲利普斯曲线所描述的失业与通胀之间的替代关系。政策制定者需要在多重目标间寻求平衡，例如美联储在制定货币政策时既考虑就业市场状况也关注通胀预期，采用&amp;quot;对称性通胀目标&amp;quot;框架允许通胀率暂时高于2%的目标以支持就业。&lt;/p>
+&lt;h2 id="商品市场与is曲线分析">商品市场与IS曲线分析 &lt;a href="#%e5%95%86%e5%93%81%e5%b8%82%e5%9c%ba%e4%b8%8eis%e6%9b%b2%e7%ba%bf%e5%88%86%e6%9e%90" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>凯恩斯交叉模型&lt;/strong>构成了理解商品市场均衡的基础框架。该模型的核心在于&lt;strong>计划支出等于实际产出&lt;/strong>的均衡条件，其中计划支出(E)由消费(C)、投资(I)和政府支出(G)组成：E = C(Y-T) + I + G。消费函数C = c0 + c1(Y-T)表明消费取决于自主消费c0和边际消费倾向c1(通常0&amp;lt;c1&amp;lt;1)，可支配收入(Y-T)则是总收入减税收。例如，若边际消费倾向为0.8，税收减少100亿元将导致消费增加80亿元，通过乘数效应最终使总产出增加更多。&lt;/p>
+&lt;p>&lt;strong>乘数效应&lt;/strong>揭示了自主支出变化对产出的放大作用。在基础凯恩斯模型中，乘数公式为1/(1-c1)，边际消费倾向越大，乘数效应越显著。这一机制解释了为什么政府在经济衰退时增加公共投资能有效刺激经济——假设c1=0.75，则政府支出增加100亿元最终将带来400亿元的总产出增长(乘数为4)。2009年美国《复苏与再投资法案》正是基于这一逻辑，推出了7870亿美元的财政刺激计划以应对金融危机后的经济衰退。&lt;/p>
+&lt;p>&lt;strong>IS曲线&lt;/strong>代表了商品市场上产出(Y)与利率(r)之间的均衡关系，其推导基于投资是利率的减函数这一假设：I = I(r)。利率上升将提高融资成本，抑制企业投资，从而减少总需求和均衡产出，这解释了IS曲线向下倾斜的形状。IS曲线的位置取决于自主支出(如政府支出、消费者信心等)，例如2020年新冠疫情期间，各国政府大幅增加公共卫生支出和转移支付，相当于使IS曲线向右移动，部分抵消了私人部门支出下降的负面影响。&lt;/p>
+&lt;p>财政政策通过直接影响IS曲线的位置来调控经济。&lt;strong>扩张性财政政策&lt;/strong>(增加政府支出或减税)会提升总需求，使IS曲线右移；而紧缩性政策则相反。布兰查德特别分析了财政政策乘数的不确定性——在实际中，乘数可能小于理论值，因为部分支出可能&amp;quot;挤出&amp;quot;私人投资，或者家庭预期未来增税而增加储蓄(李嘉图等价)。例如，2010-2012年欧元区国家实施的财政紧缩政策导致IS曲线左移，加剧了经济衰退，部分因为乘数效应被低估。&lt;/p>
+&lt;p>商品市场的动态调整过程展现了宏观经济的内在稳定性机制。当实际产出高于均衡水平时，非计划库存积累将促使企业减产；反之，库存减少将刺激增产。这一机制在汽车产业表现明显——当需求意外下降时，未售车辆积压会促使厂商调整生产计划。然而，布兰查德指出这种调整并非瞬间完成，时滞可能导致短期内产出波动，这正是需要政策干预的理论基础。&lt;/p>
+&lt;p>&lt;em>表：影响IS曲线位置的主要因素&lt;/em>&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>&lt;strong>影响因素&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>变化方向&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>IS曲线移动方向&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>经济实例&lt;/strong>&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>政府支出(G)&lt;/td>
+ &lt;td>增加&lt;/td>
+ &lt;td>右移&lt;/td>
+ &lt;td>2009年美国刺激计划&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>税收(T)&lt;/td>
+ &lt;td>减少&lt;/td>
+ &lt;td>右移&lt;/td>
+ &lt;td>2017年美国减税法案&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>消费者信心(c0)&lt;/td>
+ &lt;td>提升&lt;/td>
+ &lt;td>右移&lt;/td>
+ &lt;td>疫情后消费反弹&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>企业预期&lt;/td>
+ &lt;td>悲观&lt;/td>
+ &lt;td>左移&lt;/td>
+ &lt;td>2008年投资锐减&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>边际消费倾向(c1)&lt;/td>
+ &lt;td>增大&lt;/td>
+ &lt;td>斜率变缓&lt;/td>
+ &lt;td>社会保障完善国家&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;p>布兰查德的模型特别关注&lt;strong>预期&lt;/strong>在商品市场中的作用。如果消费者预期未来收入下降，即使当前税收减少也可能不会增加消费，这会削弱财政政策效果。同样，企业投资决策不仅取决于当前利率，更基于对未来销售和利润的预期。例如，2022年美联储加息初期，尽管融资成本上升，但由于企业看好后疫情复苏前景，美国投资仍保持强劲，说明预期因素可能部分抵消利率影响。&lt;/p></description></item><item><title>金融市场基础</title><link>https://blahvalf.github.io/docs/economy/financial_market_base/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/economy/financial_market_base/</guid><description>&lt;h2 id="一金融市场的核心资产类别">一、金融市场的核心资产类别 &lt;a href="#%e4%b8%80%e9%87%91%e8%9e%8d%e5%b8%82%e5%9c%ba%e7%9a%84%e6%a0%b8%e5%bf%83%e8%b5%84%e4%ba%a7%e7%b1%bb%e5%88%ab" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-股票equities">1. 股票（Equities） &lt;a href="#1-%e8%82%a1%e7%a5%a8equities" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>定义与本质&lt;/strong>：
+股票代表公司所有权的份额，持有者（股东）对公司资产和收益拥有剩余索取权。股票市场是企业直接融资的重要渠道，也是投资者参与企业成长的主要方式。&lt;/p>
+&lt;p>&lt;strong>关键特征&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>永久性资本&lt;/strong>：无到期日，除非公司回购或私有化&lt;/li>
+&lt;li>&lt;strong>收益构成&lt;/strong>：资本增值（股价上涨）+股息收入&lt;/li>
+&lt;li>&lt;strong>投票权&lt;/strong>：普通股通常享有公司治理权（特殊类别股除外）&lt;/li>
+&lt;li>&lt;strong>有限责任&lt;/strong>：股东损失不超过投资金额&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>主要类型&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;em>普通股&lt;/em>：基本所有权形式，具有投票权和分红权&lt;/li>
+&lt;li>&lt;em>优先股&lt;/em>：固定股息优先权，通常无投票权，清算时优先受偿&lt;/li>
+&lt;li>&lt;em>存托凭证&lt;/em>（如ADR/GDR）：跨境上市的变通形式&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>估值要素&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>基本面分析：PE比率、PB比率、股息率、自由现金流&lt;/li>
+&lt;li>市场情绪：投资者预期、行业轮动、宏观经济环境&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>风险维度&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>系统性风险（市场整体波动）&lt;/li>
+&lt;li>非系统性风险（公司特定风险，可通过分散化降低）&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-债券fixed-income-securities">2. 债券（Fixed Income Securities） &lt;a href="#2-%e5%80%ba%e5%88%b8fixed-income-securities" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>定义与本质&lt;/strong>：
+债券是发行人（政府/企业）与投资者之间的债权债务契约，承诺按期支付利息并到期偿还本金。债券市场是债务融资的核心场所。&lt;/p>
+&lt;p>&lt;strong>核心要素&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>票面利率&lt;/strong>：固定或浮动利息支付率&lt;/li>
+&lt;li>&lt;strong>到期期限&lt;/strong>：短期（1年内）、中期（1-10年）、长期（10年以上）&lt;/li>
+&lt;li>&lt;strong>信用质量&lt;/strong>：由评级机构（穆迪、标普等）评估的违约风险&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>主要品种&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;em>国债&lt;/em>：国家信用背书，视为无风险利率基准&lt;/li>
+&lt;li>&lt;em>市政债券&lt;/em>：地方政府发行，常具税收优惠&lt;/li>
+&lt;li>&lt;em>公司债&lt;/em>：企业发行，收益率反映信用风险&lt;/li>
+&lt;li>&lt;em>资产证券化产品&lt;/em>：MBS、ABS等基于底层资产的结构化债券&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>定价机制&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>与市场利率反向变动：Price = ∑(C/(1+r)^t) + FV/(1+r)^n&lt;/li>
+&lt;li>收益率曲线：反映不同期限利率结构的关键指标&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>风险类型&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>利率风险（久期衡量）&lt;/li>
+&lt;li>信用风险（违约可能性）&lt;/li>
+&lt;li>流动性风险（市场深度不足）&lt;/li>
+&lt;li>再投资风险（现金流再投资收益率下降）&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-期货futures">3. 期货（Futures） &lt;a href="#3-%e6%9c%9f%e8%b4%a7futures" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>定义与本质&lt;/strong>：
+标准化合约，约定未来特定时间以确定价格买卖标的资产。期货市场最初为对冲商品价格风险而生，现已扩展到金融资产。&lt;/p>
+&lt;p>&lt;strong>核心机制&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>标准化合约&lt;/strong>：交易所统一规定合约规模、交割品质等&lt;/li>
+&lt;li>&lt;strong>保证金交易&lt;/strong>：杠杆效应（通常5-15%保证金比例）&lt;/li>
+&lt;li>&lt;strong>每日无负债结算&lt;/strong>：Mark-to-Market制度&lt;/li>
+&lt;li>&lt;strong>交割方式&lt;/strong>：实物交割或现金结算&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>主要类别&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;em>商品期货&lt;/em>：原油、黄金、农产品等&lt;/li>
+&lt;li>&lt;em>金融期货&lt;/em>：股指期货、国债期货、外汇期货&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>市场功能&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>价格发现：反映市场对未来价格的集体预期&lt;/li>
+&lt;li>风险管理：套期保值对冲现货风险&lt;/li>
+&lt;li>投机交易：利用杠杆获取价差收益&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>定价基础&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>持有成本模型：F = S × e^(r-q)T&lt;/li>
+&lt;li>基差风险：现货与期货价格之差&lt;/li>
+&lt;/ul>
+&lt;h3 id="4-期权options">4. 期权（Options） &lt;a href="#4-%e6%9c%9f%e6%9d%83options" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>定义与本质&lt;/strong>：
+赋予持有者在特定日期或之前以约定价格买卖标的资产权利的合约。期权买方支付权利金获取选择权，卖方收取权利金承担义务。&lt;/p></description></item></channel></rss>

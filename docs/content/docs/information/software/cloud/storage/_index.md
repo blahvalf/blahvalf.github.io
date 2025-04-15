@@ -1,5 +1,5 @@
 ---
 weight: 5
-title: "AIGC"
+title: "存储"
 draft: false
 ---

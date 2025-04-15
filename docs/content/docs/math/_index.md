@@ -1,6 +1,6 @@
 ---
-weight: 2
+weight: 3
 title: "数学"
-icon: "edit"
+icon: "calculate"
 draft: false
 ---

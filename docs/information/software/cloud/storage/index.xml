@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>存储 on My New Hugo Site</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/</link><description>Recent content in 存储 on My New Hugo Site</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://blahvalf.github.io/docs/information/software/cloud/storage/index.xml" rel="self" type="application/rss+xml"/><item><title>Secret</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/secret/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/secret/</guid><description>&lt;p>Secret 解决了密码、token、密钥等敏感数据的配置问题，而不需要把这些敏感数据暴露到镜像或者 Pod Spec 中。Secret 可以以 Volume 或者环境变量的方式使用。&lt;/p>
+&lt;p>Secret 有三种类型：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>Service Account&lt;/strong> ：用来访问 Kubernetes API，由 Kubernetes 自动创建，并且会自动挂载到 Pod 的 &lt;code>/run/secrets/kubernetes.io/serviceaccount&lt;/code> 目录中；&lt;/li>
+&lt;li>&lt;strong>Opaque&lt;/strong> ：base64 编码格式的 Secret，用来存储密码、密钥等；&lt;/li>
+&lt;li>&lt;strong>kubernetes.io/dockerconfigjson&lt;/strong> ：用来存储私有 docker registry 的认证信息。&lt;/li>
+&lt;/ul>
+&lt;h2 id="opaque-secret">Opaque Secret &lt;a href="#opaque-secret" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Opaque 类型的数据是一个 map 类型，要求 value 是 base64 编码格式：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="9754335" class="language-sh ">
+ &lt;code>$ echo -n &amp;#34;admin&amp;#34; | base64
+YWRtaW4=
+$ echo -n &amp;#34;1f2d1e2e67df&amp;#34; | base64
+MWYyZDFlMmU2N2Rm&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>secrets.yml&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="7a00724" class="language-yaml ">
+ &lt;code>apiVersion: v1
+kind: Secret
+metadata:
+ name: mysecret
+type: Opaque
+data:
+ password: MWYyZDFlMmU2N2Rm
+ username: YWRtaW4=&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>接着，就可以创建 secret 了：&lt;code>kubectl create -f secrets.yml&lt;/code>。&lt;/p></description></item><item><title>ConfigMap</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/configmap/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/configmap/</guid><description>&lt;p>其实 ConfigMap 功能在 Kubernetes1.2 版本的时候就有了，许多应用程序会从配置文件、命令行参数或环境变量中读取配置信息。这些配置信息需要与 docker image 解耦，你总不能每修改一个配置就重做一个 image 吧？ConfigMap API 给我们提供了向容器中注入配置信息的机制，ConfigMap 可以被用来保存单个属性，也可以用来保存整个配置文件或者 JSON 二进制大对象。&lt;/p>
+&lt;h2 id="configmap-概览">ConfigMap 概览 &lt;a href="#configmap-%e6%a6%82%e8%a7%88" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>ConfigMap API&lt;/strong> 资源用来保存 &lt;strong>key-value pair&lt;/strong> 配置数据，这个数据可以在 &lt;strong>pods&lt;/strong> 里使用，或者被用来为像 &lt;strong>controller&lt;/strong> 一样的系统组件存储配置数据。虽然 ConfigMap 跟 &lt;a href="https://kubernetes.io/docs/user-guide/secrets/" rel="external" target="_blank">Secrets&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 类似，但是 ConfigMap 更方便的处理不含敏感信息的字符串。 注意：ConfigMaps 不是属性配置文件的替代品。ConfigMaps 只是作为多个 properties 文件的引用。你可以把它理解为 Linux 系统中的 &lt;code>/etc&lt;/code> 目录，专门用来存储配置文件的目录。下面举个例子，使用 ConfigMap 配置来创建 Kubernetes Volumes，ConfigMap 中的每个 data 项都会成为一个新文件。&lt;/p></description></item><item><title>Volume</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/volume/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/volume/</guid><description>&lt;p>容器磁盘上的文件的生命周期是短暂的，这就使得在容器中运行重要应用时会出现一些问题。首先，当容器崩溃时，kubelet 会重启它，但是容器中的文件将丢失——容器以干净的状态（镜像最初的状态）重新启动。其次，在 &lt;code>Pod&lt;/code> 中同时运行多个容器时，这些容器之间通常需要共享文件。Kubernetes 中的 &lt;code>Volume&lt;/code> 抽象就很好的解决了这些问题。&lt;/p>
+&lt;p>建议先熟悉 &lt;a href="https://kubernetes.io/docs/user-guide/pods" rel="external" target="_blank">pod&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p>
+&lt;h2 id="背景">背景 &lt;a href="#%e8%83%8c%e6%99%af" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Docker 中也有一个 &lt;a href="https://docs.docker.com/engine/admin/volumes/" rel="external" target="_blank">volume&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 的概念，尽管它稍微宽松一些，管理也很少。在 Docker 中，卷就像是磁盘或是另一个容器中的一个目录。它的生命周期不受管理，直到最近才有了 local-disk-backed 卷。Docker 现在提供了卷驱动程序，但是功能还非常有限（例如Docker1.7只允许每个容器使用一个卷驱动，并且无法给卷传递参数）。&lt;/p></description></item><item><title>持久化卷（Persistent Volume）</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/pv/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/pv/</guid><description>&lt;p>本文档介绍了 Kubernetes 中 &lt;code>PersistentVolume&lt;/code> 的当前状态。建议您在阅读本文档前先熟悉 &lt;a href="https://kubernetes.io/docs/concepts/storage/volumes/" rel="external" target="_blank">volume&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p>
+&lt;h2 id="介绍">介绍 &lt;a href="#%e4%bb%8b%e7%bb%8d" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>对于管理计算资源来说，管理存储资源明显是另一个问题。&lt;code>PersistentVolume&lt;/code> 子系统为用户和管理员提供了一个 API，该 API 将如何提供存储的细节抽象了出来。为此，我们引入两个新的 API 资源：&lt;code>PersistentVolume&lt;/code> 和 &lt;code>PersistentVolumeClaim&lt;/code>。&lt;/p>
+&lt;p>&lt;code>PersistentVolume&lt;/code>（PV）是由管理员设置的存储，它是群集的一部分。就像节点是集群中的资源一样，PV 也是集群中的资源。 PV 是 Volume 之类的卷插件，但具有独立于使用 PV 的 Pod 的生命周期。此 API 对象包含存储实现的细节，即 NFS、iSCSI 或特定于云供应商的存储系统。&lt;/p></description></item><item><title>StorageClass</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/storageclass/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/storageclass/</guid><description>&lt;p>本文介绍了 Kubernetes 中 &lt;code>StorageClass&lt;/code> 的概念。在阅读本文之前建议先熟悉 &lt;a href="https://kubernetes.io/docs/concepts/storage/volumes" rel="external" target="_blank">卷&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 和 &lt;a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes" rel="external" target="_blank">Persistent Volume（持久卷）&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p></description></item><item><title>本地持久化存储</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/local-persistent-storage/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/local-persistent-storage/</guid><description>&lt;p>本地持久化卷允许用户通过标准 PVC 接口以简单便携的方式访问本地存储。PV 中包含系统用于将 Pod 安排到正确节点的节点亲和性信息。&lt;/p>
+&lt;p>一旦配置了本地卷，外部静态配置器（provisioner）可用于帮助简化本地存储管理。请注意，本地存储配置器与大多数配置器不同，并且尚不支持动态配置。相反，它要求管理员预先配置每个节点上的本地卷，并且这些卷应该是：&lt;/p>
+&lt;ol>
+&lt;li>Filesystem volumeMode（默认）PV—— 将它们挂载到发现目录下。&lt;/li>
+&lt;li>Block volumeMode PV——在发现目录下为节点上的块设备创建一个符号链接。&lt;/li>
+&lt;/ol>
+&lt;p>配置器将通过为每个卷创建和清除 PersistentVolumes 来管理发现目录下的卷。&lt;/p>
+&lt;h2 id="配置要求">配置要求 &lt;a href="#%e9%85%8d%e7%bd%ae%e8%a6%81%e6%b1%82" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>本地卷插件希望路径稳定，包括在重新启动时和添加或删除磁盘时。&lt;/li>
+&lt;li>静态配置器仅发现挂载点（对于文件系统模式卷）或符号链接（对于块模式卷）。对于基于目录的本地卷必须绑定到发现目录中。&lt;/li>
+&lt;/ul>
+&lt;h2 id="版本兼容性">版本兼容性 &lt;a href="#%e7%89%88%e6%9c%ac%e5%85%bc%e5%ae%b9%e6%80%a7" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>推荐配置器版本与Kubernetes版本&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Provisioner version&lt;/th>
+ &lt;th>K8s version&lt;/th>
+ &lt;th>Reason&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;a href="https://github.com/kubernetes-incubator/external-storage/tree/local-volume-provisioner-v2.1.0/local-volume" rel="external" target="_blank">2.1.0&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>&lt;/td>
+ &lt;td>1.10&lt;/td>
+ &lt;td>Beta API default, block&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;a href="https://github.com/kubernetes-incubator/external-storage/tree/local-volume-provisioner-v2.0.0/local-volume" rel="external" target="_blank">2.0.0&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>&lt;/td>
+ &lt;td>1.8, 1.9&lt;/td>
+ &lt;td>Mount propagation&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;a href="https://github.com/kubernetes-incubator/external-storage/tree/local-volume-provisioner-v1.0.1/local-volume" rel="external" target="_blank">1.0.1&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>&lt;/td>
+ &lt;td>1.7&lt;/td>
+ &lt;td>&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="k8s功能状态">K8s功能状态 &lt;a href="#k8s%e5%8a%9f%e8%83%bd%e7%8a%b6%e6%80%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>另请参阅&lt;a href="https://github.com/kubernetes-incubator/external-storage/blob/master/local-volume/KNOWN_ISSUES.md" rel="external" target="_blank">已知问题&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>和 &lt;a href="https://github.com/kubernetes-incubator/external-storage/blob/master/local-volume/CHANGELOG.md" rel="external" target="_blank">CHANGELOG&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p></description></item></channel></rss>

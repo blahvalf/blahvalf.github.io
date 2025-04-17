@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>软件 on My New Hugo Site</title><link>https://blahvalf.github.io/docs/information/software/</link><description>Recent content in 软件 on My New Hugo Site</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://blahvalf.github.io/docs/information/software/index.xml" rel="self" type="application/rss+xml"/><item><title>设计模式与七大原则</title><link>https://blahvalf.github.io/docs/information/software/serven_rules/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/serven_rules/</guid><description>&lt;h2 id="设计模式概述">设计模式概述 &lt;a href="#%e8%ae%be%e8%ae%a1%e6%a8%a1%e5%bc%8f%e6%a6%82%e8%bf%b0" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>设计模式是&lt;strong>可复用面向对象软件的设计经验总结&lt;/strong>，通过23种经典模式解决特定场景下的代码扩展性、复用性、维护性问题。其本质遵循七大核心设计原则：&lt;/p>
+&lt;hr>
+&lt;h2 id="七大设计原则详解">七大设计原则详解 &lt;a href="#%e4%b8%83%e5%a4%a7%e8%ae%be%e8%ae%a1%e5%8e%9f%e5%88%99%e8%af%a6%e8%a7%a3" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-单一职责原则srp">1. 单一职责原则（SRP） &lt;a href="#1-%e5%8d%95%e4%b8%80%e8%81%8c%e8%b4%a3%e5%8e%9f%e5%88%99srp" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>核心思想&lt;/strong>：一个类只负责一个功能领域中的相应职责&lt;br>
+&lt;strong>解决问题&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>避免类因承担过多职责导致的高耦合&lt;/li>
+&lt;li>减少修改代码时引发连锁错误的风险&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>示例&lt;/strong>：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="2515545" class="language-java ">
+ &lt;code>// 错误示例：用户管理类同时处理信息存储和日志记录
+class UserManager {
+ void saveUser() { /* 存储用户 */ }
+ void logActivity() { /* 记录日志 */ }
+}
+
+// 正确拆分
+class UserRepository { void saveUser() }
+class ActivityLogger { void logActivity() }&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;hr>
+&lt;h3 id="2-开闭原则ocp">2. 开闭原则（OCP） &lt;a href="#2-%e5%bc%80%e9%97%ad%e5%8e%9f%e5%88%99ocp" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>核心思想&lt;/strong>：对扩展开放，对修改关闭&lt;br>
+&lt;strong>解决问题&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>新功能扩展无需修改原有代码&lt;/li>
+&lt;li>提升系统稳定性与可维护性&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>示例&lt;/strong>：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="1bbff81" class="language-java ">
+ &lt;code>// 基础图形接口
+interface Shape { double area(); }
+
+// 新增图形只需扩展接口
+class Circle implements Shape { /* 实现圆面积计算 */ }
+class Square implements Shape { /* 实现正方形面积计算 */ }&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;hr>
+&lt;h3 id="3-里氏替换原则lsp">3. 里氏替换原则（LSP） &lt;a href="#3-%e9%87%8c%e6%b0%8f%e6%9b%bf%e6%8d%a2%e5%8e%9f%e5%88%99lsp" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>核心思想&lt;/strong>：子类必须能替换父类且不影响程序正确性&lt;br>
+&lt;strong>解决问题&lt;/strong>：&lt;/p></description></item><item><title>简洁架构</title><link>https://blahvalf.github.io/docs/information/software/clean_arch/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/clean_arch/</guid><description>&lt;h2 id="1-概念与核心目标">1. 概念与核心目标 &lt;a href="#1-%e6%a6%82%e5%bf%b5%e4%b8%8e%e6%a0%b8%e5%bf%83%e7%9b%ae%e6%a0%87" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>简洁架构（Clean Architecture）是一种&lt;strong>以业务逻辑为核心&lt;/strong>的软件架构设计方法论。其核心目标是：&lt;/p>
+&lt;ul>
+&lt;li>建立&lt;strong>框架无关&lt;/strong>的系统结构&lt;/li>
+&lt;li>保持业务逻辑的&lt;strong>独立性&lt;/strong>与&lt;strong>可测试性&lt;/strong>&lt;/li>
+&lt;li>实现&lt;strong>双向隔离&lt;/strong>：业务核心与技术实现的隔离、数据源与展示层的隔离&lt;/li>
+&lt;li>通过分层设计强制实施&lt;strong>依赖规则&lt;/strong>&lt;/li>
+&lt;/ul>
+&lt;h2 id="2-核心设计思想">2. 核心设计思想 &lt;a href="#2-%e6%a0%b8%e5%bf%83%e8%ae%be%e8%ae%a1%e6%80%9d%e6%83%b3" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;pre class="mermaid">graph TD
+ subgraph 框架层
+ Web[Web框架]
+ DB[(数据库)]
+ subgraph 接口适配层
+ Controllers
+ Presenters
+ subgraph 用例层
+ UseCases
+ subgraph 实体层
+ Entities
+ end
+ end
+ end
+ end
+
+ Web --&amp;gt; Controllers
+ Controllers --&amp;gt; UseCases
+ UseCases --&amp;gt; Entities
+ Presenters --&amp;gt; UseCases
+ DB -.-&amp;gt; Entities
+&lt;/pre>
+&lt;h3 id="21-分层结构同心圆模型">2.1 分层结构（同心圆模型） &lt;a href="#21-%e5%88%86%e5%b1%82%e7%bb%93%e6%9e%84%e5%90%8c%e5%bf%83%e5%9c%86%e6%a8%a1%e5%9e%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;h4 id="分层说明">分层说明： &lt;a href="#%e5%88%86%e5%b1%82%e8%af%b4%e6%98%8e" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>实体层（Entities）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>包含核心业务对象与规则&lt;/li>
+&lt;li>示例：订单实体、用户实体及其验证规则&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>用例层（Use Cases）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>实现具体业务场景的交互逻辑&lt;/li>
+&lt;li>示例：&amp;ldquo;创建订单&amp;quot;流程、&amp;ldquo;支付处理&amp;quot;流程&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>接口适配层（Interface Adapters）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>转换数据格式适配不同协议&lt;/li>
+&lt;li>包含：控制器、网关、数据映射器&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>框架层（Frameworks &amp;amp; Drivers）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>技术实现细节：数据库、Web框架、UI组件&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;h3 id="22-依赖规则">2.2 依赖规则 &lt;a href="#22-%e4%be%9d%e8%b5%96%e8%a7%84%e5%88%99" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>向内依赖原则&lt;/strong>：外层可以依赖内层，反之禁止&lt;/li>
+&lt;li>抽象接口定义在内层，具体实现放在外层&lt;/li>
+&lt;li>数据流向：从外层到内层必须经过边界接口&lt;/li>
+&lt;/ul>
+&lt;h2 id="3-解决的关键问题">3. 解决的关键问题 &lt;a href="#3-%e8%a7%a3%e5%86%b3%e7%9a%84%e5%85%b3%e9%94%ae%e9%97%ae%e9%a2%98" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>问题类型&lt;/th>
+ &lt;th>传统架构痛点&lt;/th>
+ &lt;th>简洁架构解决方案&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>代码耦合度&lt;/td>
+ &lt;td>业务逻辑与技术实现深度耦合&lt;/td>
+ &lt;td>通过分层强制解耦&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>可维护性&lt;/td>
+ &lt;td>修改框架导致业务逻辑变动&lt;/td>
+ &lt;td>业务核心保持技术中立&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>测试复杂度&lt;/td>
+ &lt;td>需要启动完整环境才能测试&lt;/td>
+ &lt;td>核心层可脱离框架独立测试&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>技术锁定&lt;/td>
+ &lt;td>更换技术栈成本极高&lt;/td>
+ &lt;td>通过接口适配实现灵活替换&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="4-具体实现示例">4. 具体实现示例 &lt;a href="#4-%e5%85%b7%e4%bd%93%e5%ae%9e%e7%8e%b0%e7%a4%ba%e4%be%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="41-代码结构">4.1 代码结构 &lt;a href="#41-%e4%bb%a3%e7%a0%81%e7%bb%93%e6%9e%84" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="326dc47" class="language-python ">
+ &lt;code># 实体层
+class Order:
+ def __init__(self, items: list, total: float):
+ self._validate(items, total)
+ 
+ def _validate(self, items, total):
+ # 核心业务规则实现
+
+# 用例层
+class CreateOrderUseCase:
+ def __init__(self, order_repo: OrderRepository):
+ self.repo = order_repo
+ 
+ def execute(self, items):
+ order = Order(items)
+ return self.repo.save(order)
+
+# 接口适配层（实现内层定义的抽象接口）
+class SQLOrderRepository:
+ def save(self, order):
+ # 数据库具体实现
+
+# 框架层（FastAPI示例）
+@app.post(&amp;#34;/orders&amp;#34;)
+def create_order(items: list):
+ repo = SQLOrderRepository()
+ use_case = CreateOrderUseCase(repo)
+ return use_case.execute(items)&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;h3 id="42-依赖管理">4.2 依赖管理 &lt;a href="#42-%e4%be%9d%e8%b5%96%e7%ae%a1%e7%90%86" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;pre class="mermaid">graph TD
+ A[Web框架] --&amp;gt;|依赖| B[接口适配器]
+ B --&amp;gt;|实现| C[用例层接口]
+ C --&amp;gt;|依赖| D[实体层]
+&lt;/pre>
+&lt;h2 id="5-类似架构思想对比">5. 类似架构思想对比 &lt;a href="#5-%e7%b1%bb%e4%bc%bc%e6%9e%b6%e6%9e%84%e6%80%9d%e6%83%b3%e5%af%b9%e6%af%94" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>架构类型&lt;/th>
+ &lt;th>核心差异点&lt;/th>
+ &lt;th>适用场景&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>分层架构&lt;/td>
+ &lt;td>水平分层 vs 同心圆分层&lt;/td>
+ &lt;td>传统企业应用&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>六边形架构&lt;/td>
+ &lt;td>端口-适配器模式更明确&lt;/td>
+ &lt;td>高交互性系统&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>DDD&lt;/td>
+ &lt;td>强调领域建模而非结构约束&lt;/td>
+ &lt;td>复杂业务系统&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>洋葱架构&lt;/td>
+ &lt;td>类似分层但强调领域服务层&lt;/td>
+ &lt;td>长期演进的中大型系统&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="6-优势与挑战">6. 优势与挑战 &lt;a href="#6-%e4%bc%98%e5%8a%bf%e4%b8%8e%e6%8c%91%e6%88%98" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>✅ 核心优势：&lt;/p></description></item></channel></rss>

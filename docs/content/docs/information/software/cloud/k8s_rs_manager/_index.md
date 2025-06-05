@@ -1,5 +1,5 @@
 ---
 weight: 2
-title: "通信"
+title: "K8s集群控制"
 draft: false
 ---

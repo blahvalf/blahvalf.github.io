@@ -1,0 +1,2947 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>My New Hugo Site</title><link>https://blahvalf.github.io/</link><description>Recent content on My New Hugo Site</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://blahvalf.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>K8s架构</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_arch/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_arch/</guid><description>&lt;h1 id="系统架构">系统架构 &lt;a href="#%e7%b3%bb%e7%bb%9f%e6%9e%b6%e6%9e%84" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>Kubernetes 最初源于谷歌内部的 Borg，提供了面向应用的容器集群部署和管理系统。Kubernetes 的目标旨在消除编排物理 / 虚拟计算，网络和存储基础设施的负担，并使应用程序运营商和开发人员完全将重点放在以容器为中心的原语上进行自助运营。Kubernetes 也提供稳定、兼容的基础（平台），用于构建定制化的 workflows 和更高级的自动化任务。 Kubernetes 具备完善的集群管理能力，包括多层次的安全防护和准入机制、多租户应用支撑能力、透明的服务注册和服务发现机制、内建负载均衡器、故障发现和自我修复能力、服务滚动升级和在线扩容、可扩展的资源自动调度机制、多粒度的资源配额管理能力。Kubernetes 还提供完善的管理工具，涵盖开发、部署测试、运维监控等各个环节。&lt;/p>
+&lt;p>Kubernetes 借鉴了 Borg 的设计理念，比如 Pod、Service、Label 和单 Pod 单 IP 等。Kubernetes 的整体架构跟 Borg 非常像，如下图所示。&lt;/p>
+&lt;pre class="mermaid">graph TD
+ subgraph 外部用户
+ K[kubectl]
+ end
+
+ subgraph Master节点
+ A[API Server&amp;lt;br/&amp;gt;REST模式]
+ AD[Admission&amp;lt;br/&amp;gt;校验/变更]
+ S[Storage&amp;lt;br/&amp;gt;etcd]
+ CM[Controller Manager]
+ SCH[Scheduler]
+ end
+
+ subgraph Node节点
+ K1[kubelet]
+ K2[kubelet]
+ P1[Pod]
+ P2[Pod]
+ C1[Container]
+ C2[Container]
+ C3[Container]
+ end
+
+ 网络((Internet)) --&amp;gt; FW[Firewall]
+ FW --&amp;gt; PR[Proxy]
+ 
+ K -- 认证请求 --&amp;gt; A
+ A &amp;lt;-- Valid &amp;amp; Mutex --&amp;gt; AD
+ A -- 存储 --&amp;gt; S
+
+ CM &amp;lt;-- 监听/读写/资源变更 --&amp;gt; A
+ A &amp;lt;-- 读写/调度 --&amp;gt; SCH
+
+ 
+ A &amp;lt;-- 获取状态/更新状态 --&amp;gt; K1
+ K1 --&amp;gt; P1 --&amp;gt; C1 &amp;amp; C2
+ K1 --&amp;gt; P2 --&amp;gt; C3
+
+ PR -. 流量代理 .-&amp;gt; P1
+ PR -. 流量代理 .-&amp;gt; P2
+
+ classDef master fill:#f9f,stroke:#333;
+ classDef node fill:#ccf,stroke:#333;
+ classDef pod fill:#cff,stroke:#333;
+ class K1,K2,PR node;
+ class A,AD,S,CM,SCH master;
+ class P1,P2 pod;
+&lt;/pre>
+&lt;p>Kubernetes 主要由以下几个核心组件组成：&lt;/p></description></item><item><title>Secret</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/secret/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/secret/</guid><description>&lt;p>Secret 解决了密码、token、密钥等敏感数据的配置问题，而不需要把这些敏感数据暴露到镜像或者 Pod Spec 中。Secret 可以以 Volume 或者环境变量的方式使用。&lt;/p>
+&lt;p>Secret 有三种类型：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>Service Account&lt;/strong> ：用来访问 Kubernetes API，由 Kubernetes 自动创建，并且会自动挂载到 Pod 的 &lt;code>/run/secrets/kubernetes.io/serviceaccount&lt;/code> 目录中；&lt;/li>
+&lt;li>&lt;strong>Opaque&lt;/strong> ：base64 编码格式的 Secret，用来存储密码、密钥等；&lt;/li>
+&lt;li>&lt;strong>kubernetes.io/dockerconfigjson&lt;/strong> ：用来存储私有 docker registry 的认证信息。&lt;/li>
+&lt;/ul>
+&lt;h2 id="opaque-secret">Opaque Secret &lt;a href="#opaque-secret" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Opaque 类型的数据是一个 map 类型，要求 value 是 base64 编码格式：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="9754335" class="language-sh ">
+ &lt;code>$ echo -n &amp;#34;admin&amp;#34; | base64
+YWRtaW4=
+$ echo -n &amp;#34;1f2d1e2e67df&amp;#34; | base64
+MWYyZDFlMmU2N2Rm&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>secrets.yml&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="7a00724" class="language-yaml ">
+ &lt;code>apiVersion: v1
+kind: Secret
+metadata:
+ name: mysecret
+type: Opaque
+data:
+ password: MWYyZDFlMmU2N2Rm
+ username: YWRtaW4=&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>接着，就可以创建 secret 了：&lt;code>kubectl create -f secrets.yml&lt;/code>。&lt;/p></description></item><item><title>Service</title><link>https://blahvalf.github.io/docs/information/software/cloud/service-discovery/service/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/service-discovery/service/</guid><description>&lt;p>Kubernetes &lt;a href="https://kubernetes.io/docs/user-guide/pods" rel="external" target="_blank">&lt;code>Pod&lt;/code>&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 是有生命周期的，它们可以被创建，也可以被销毁，然而一旦被销毁生命就永远结束。通过 &lt;a href="https://kubernetes.io/docs/user-guide/replication-controller" rel="external" target="_blank">&lt;code>ReplicationController&lt;/code>&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 能够动态地创建和销毁 &lt;code>Pod&lt;/code>。 每个 &lt;code>Pod&lt;/code> 都会获取它自己的 IP 地址，即使这些 IP 地址不总是稳定可依赖的。这会导致一个问题：在 Kubernetes 集群中，如果一组 &lt;code>Pod&lt;/code>（称为 backend）为其它 &lt;code>Pod&lt;/code> （称为 frontend）提供服务，那么 frontend Pod 该如何发现和连接哪些 backend Pod 呢？&lt;/p></description></item><item><title>ServiceAccount</title><link>https://blahvalf.github.io/docs/information/software/cloud/auth/serviceaccount/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/auth/serviceaccount/</guid><description>&lt;p>ServiceAccount 为 Pod 中的进程提供身份信息。&lt;/p>
+&lt;p>&lt;strong>注意&lt;/strong>：&lt;strong>本文是关于 Service Account 的用户指南，管理指南另见 Service Account 的集群管理指南 。&lt;/strong>&lt;/p>
+&lt;blockquote>
+&lt;p>本文档描述的关于 Service Account 的行为只有当您按照 Kubernetes 项目建议的方式搭建起集群的情况下才有效。您的集群管理员可能在您的集群中有自定义配置，这种情况下该文档可能并不适用。&lt;/p>&lt;/blockquote>
+&lt;p>当您（真人用户）访问集群（例如使用&lt;code>kubectl&lt;/code>命令）时，apiserver 会将您认证为一个特定的 User Account（目前通常是&lt;code>admin&lt;/code>，除非您的系统管理员自定义了集群配置）。Pod 容器中的进程也可以与 apiserver 联系。 当它们在联系 apiserver 的时候，它们会被认证为一个特定的 Service Account（例如&lt;code>default&lt;/code>）。&lt;/p>
+&lt;h2 id="使用默认的-service-account-访问-api-server">使用默认的 Service Account 访问 API server &lt;a href="#%e4%bd%bf%e7%94%a8%e9%bb%98%e8%ae%a4%e7%9a%84-service-account-%e8%ae%bf%e9%97%ae-api-server" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>当您创建 pod 的时候，如果您没有指定一个 service account，系统会自动得在与该pod 相同的 namespace 下为其指派一个&lt;code>default&lt;/code> service account。如果您获取刚创建的 pod 的原始 json 或 yaml 信息（例如使用&lt;code>kubectl get pods/podename -o yaml&lt;/code>命令），您将看到&lt;code>spec.serviceAccountName&lt;/code>字段已经被设置为 &lt;code>default&lt;/code>。&lt;/p>
+&lt;p>您可以在 pod 中使用自动挂载的 service account 凭证来访问 API，如 &lt;a href="https://kubernetes.io/docs/user-guide/accessing-the-cluster/#accessing-the-api-from-a-pod" rel="external" target="_blank">Accessing the Cluster&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 中所描述。&lt;/p></description></item><item><title>如何提问：提问的智慧</title><link>https://blahvalf.github.io/docs/develop/ask/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/develop/ask/</guid><description>&lt;h2 id="一提问的本质与哲学意义">一、提问的本质与哲学意义 &lt;a href="#%e4%b8%80%e6%8f%90%e9%97%ae%e7%9a%84%e6%9c%ac%e8%b4%a8%e4%b8%8e%e5%93%b2%e5%ad%a6%e6%84%8f%e4%b9%89" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-提问是人类认知的基石">1. 提问是人类认知的基石 &lt;a href="#1-%e6%8f%90%e9%97%ae%e6%98%af%e4%ba%ba%e7%b1%bb%e8%ae%a4%e7%9f%a5%e7%9a%84%e5%9f%ba%e7%9f%b3" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>认知革命的核心&lt;/strong>：苏格拉底通过“产婆术”提问法，引导对话者自我反思，揭示了提问作为知识生产的核心动力。爱因斯坦更直言：“提问的能力比回答更重要”。&lt;/li>
+&lt;li>&lt;strong>科学进步的引擎&lt;/strong>：伽利略质疑亚里士多德的“强弱决定子女性别”理论，通过实证提问推动科学革命。亚里士多德亦指出“提问是进步的源泉”。&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-提问的哲学分类">2. 提问的哲学分类 &lt;a href="#2-%e6%8f%90%e9%97%ae%e7%9a%84%e5%93%b2%e5%ad%a6%e5%88%86%e7%b1%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>优质提问的四个维度&lt;/strong>（粟津恭一郎理论）：
+&lt;ol>
+&lt;li>&lt;strong>轻松提问&lt;/strong>：建立信任（如“最近工作顺利吗？”）。&lt;/li>
+&lt;li>&lt;strong>劣质提问&lt;/strong>：引发防御（如“你为什么总犯错？”）。&lt;/li>
+&lt;li>&lt;strong>沉重提问&lt;/strong>：触及深层需求（如“十年后你希望成为什么样的人？”）。&lt;/li>
+&lt;li>&lt;strong>优质提问&lt;/strong>：激发行动与发现（如“如果重新开始，你会采取哪些不同策略？”）。&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="二高效提问的核心方法论">二、高效提问的核心方法论 &lt;a href="#%e4%ba%8c%e9%ab%98%e6%95%88%e6%8f%90%e9%97%ae%e7%9a%84%e6%a0%b8%e5%bf%83%e6%96%b9%e6%b3%95%e8%ae%ba" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-提问前的准备明确目标与边界">1. 提问前的准备：明确目标与边界 &lt;a href="#1-%e6%8f%90%e9%97%ae%e5%89%8d%e7%9a%84%e5%87%86%e5%a4%87%e6%98%8e%e7%a1%ae%e7%9b%ae%e6%a0%87%e4%b8%8e%e8%be%b9%e7%95%8c" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>目标导向&lt;/strong>：明确提问意图（获取信息/解决问题/启发思考），例如职场中避免泛泛而问“如何提高积极性”，转而聚焦“如何在项目压力下保持团队动力”。&lt;/li>
+&lt;li>&lt;strong>设定边界&lt;/strong>：限定问题范围。对比两种提问：
+&lt;ul>
+&lt;li>低效：“如何写出好文章？”&lt;/li>
+&lt;li>高效：“如何在3天内完成一篇针对Z世代用户的爆款短视频脚本？”&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-提问的架构设计">2. 提问的架构设计 &lt;a href="#2-%e6%8f%90%e9%97%ae%e7%9a%84%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>开放式 vs 封闭式&lt;/strong>：
+&lt;ul>
+&lt;li>封闭式（“你是否同意？”）适合快速决策，但限制思考；&lt;/li>
+&lt;li>开放式（“你认为这个方案的潜在风险是什么？”）激发深度讨论。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;strong>结构化提问法&lt;/strong>（适用于复杂问题）：
+&lt;ol>
+&lt;li>&lt;strong>背景层&lt;/strong>（“当前用户留存率是多少？”）；&lt;/li>
+&lt;li>&lt;strong>冲突层&lt;/strong>（“哪些因素导致留存率下降？”）；&lt;/li>
+&lt;li>&lt;strong>解决层&lt;/strong>（“哪些策略可能提升30%留存率？”）。&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-提问的语言艺术">3. 提问的语言艺术 &lt;a href="#3-%e6%8f%90%e9%97%ae%e7%9a%84%e8%af%ad%e8%a8%80%e8%89%ba%e6%9c%af" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>避免主观偏见&lt;/strong>：用“能否解释这个数据的变化趋势？”替代“你的数据是不是有误？”。&lt;/li>
+&lt;li>&lt;strong>积极倾听与追问&lt;/strong>：通过“能否举例说明？”或“您提到的‘用户体验’具体指哪些方面？”深化对话。&lt;/li>
+&lt;/ul>
+&lt;h2 id="三场景化提问策略">三、场景化提问策略 &lt;a href="#%e4%b8%89%e5%9c%ba%e6%99%af%e5%8c%96%e6%8f%90%e9%97%ae%e7%ad%96%e7%95%a5" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-教育场景从被动吸收到主动探究">1. 教育场景：从被动吸收到主动探究 &lt;a href="#1-%e6%95%99%e8%82%b2%e5%9c%ba%e6%99%af%e4%bb%8e%e8%a2%ab%e5%8a%a8%e5%90%b8%e6%94%b6%e5%88%b0%e4%b8%bb%e5%8a%a8%e6%8e%a2%e7%a9%b6" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>学生提问技巧&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>错题复盘三步骤&lt;/strong>（网页6案例）：
+&lt;ol>
+&lt;li>明确卡点（“这道题的解题思路中，哪一步我不理解？”）；&lt;/li>
+&lt;li>分享尝试（“我试过代入公式A，但结果不符”）；&lt;/li>
+&lt;li>寻求反馈（“您建议我调整计算顺序还是检查前提条件？”）。&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;li>&lt;strong>知识结构图法&lt;/strong>：将错题转化为逻辑图谱，通过提问梳理因果关系。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>教师提问设计&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>批判性思维激发&lt;/strong>：如《杨修之死》教学中追问“曹操杀杨修时为何无人求情？”；&lt;/li>
+&lt;li>&lt;strong>分层提问法&lt;/strong>：从记忆性提问（“文章主旨？”）到创造性提问（“如果你是作者，会如何改写结局？”）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-职场场景从信息获取到影响力构建">2. 职场场景：从信息获取到影响力构建 &lt;a href="#2-%e8%81%8c%e5%9c%ba%e5%9c%ba%e6%99%af%e4%bb%8e%e4%bf%a1%e6%81%af%e8%8e%b7%e5%8f%96%e5%88%b0%e5%bd%b1%e5%93%8d%e5%8a%9b%e6%9e%84%e5%bb%ba" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>向上管理提问术&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>目的前置法&lt;/strong>：将“领导明天有空吗？”改为“关于X项目的资源协调方案，您认为哪些部分需要优先讨论？明天下午2点可否预留20分钟？”。&lt;/li>
+&lt;li>&lt;strong>假设性提问&lt;/strong>：“如果预算增加20%，您认为我们应该优先投入产品研发还是市场扩张？”。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>团队协作提问框架&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>SCQA模型&lt;/strong>（情境-冲突-问题-答案）：
+&lt;ul>
+&lt;li>情境（S）：“当前用户投诉率上升至5%”；&lt;/li>
+&lt;li>冲突（C）：“但客服响应时间已缩短30%”；&lt;/li>
+&lt;li>问题（Q）：“哪些未被发现的环节导致矛盾？”；&lt;/li>
+&lt;li>答案（A）：“建议重新梳理用户旅程图，定位断点”。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-科研与创新从解构到重构">3. 科研与创新：从解构到重构 &lt;a href="#3-%e7%a7%91%e7%a0%94%e4%b8%8e%e5%88%9b%e6%96%b0%e4%bb%8e%e8%a7%a3%e6%9e%84%e5%88%b0%e9%87%8d%e6%9e%84" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>颠覆性提问法&lt;/strong>：
+&lt;ul>
+&lt;li>&lt;strong>第一性原理提问&lt;/strong>：特斯拉通过“电池的物理成本下限是多少？”重构电动汽车定价模型。&lt;/li>
+&lt;li>&lt;strong>跨学科嫁接&lt;/strong>：“区块链技术如何解决医疗数据孤岛问题？”。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="四提问的伦理与文化维度">四、提问的伦理与文化维度 &lt;a href="#%e5%9b%9b%e6%8f%90%e9%97%ae%e7%9a%84%e4%bc%a6%e7%90%86%e4%b8%8e%e6%96%87%e5%8c%96%e7%bb%b4%e5%ba%a6" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-尊重与被尊重提问中的权力平衡">1. 尊重与被尊重：提问中的权力平衡 &lt;a href="#1-%e5%b0%8a%e9%87%8d%e4%b8%8e%e8%a2%ab%e5%b0%8a%e9%87%8d%e6%8f%90%e9%97%ae%e4%b8%ad%e7%9a%84%e6%9d%83%e5%8a%9b%e5%b9%b3%e8%a1%a1" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>文化敏感性&lt;/strong>：在权威文化中采用“建议式提问”（“是否可以考虑……”）而非直接质疑。&lt;/li>
+&lt;li>&lt;strong>共情式提问&lt;/strong>：心理咨询中的“你觉得这种情绪背后可能有什么需求？”。&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-提问的陷阱与规避">2. 提问的陷阱与规避 &lt;a href="#2-%e6%8f%90%e9%97%ae%e7%9a%84%e9%99%b7%e9%98%b1%e4%b8%8e%e8%a7%84%e9%81%bf" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>劣质提问的特征&lt;/strong>：
+&lt;ul>
+&lt;li>模糊性（“如何成功？”）；&lt;/li>
+&lt;li>诱导性（“你不认为这个方案很差吗？”）；&lt;/li>
+&lt;li>攻击性（“你连这都不懂？”）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="五案例深度解析">五、案例深度解析 &lt;a href="#%e4%ba%94%e6%a1%88%e4%be%8b%e6%b7%b1%e5%ba%a6%e8%a7%a3%e6%9e%90" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="案例1伽利略的5个女儿之问">案例1：伽利略的“5个女儿之问” &lt;a href="#%e6%a1%88%e4%be%8b1%e4%bc%bd%e5%88%a9%e7%95%a5%e7%9a%845%e4%b8%aa%e5%a5%b3%e5%84%bf%e4%b9%8b%e9%97%ae" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>背景&lt;/strong>：比罗教授宣称“父亲强弱决定子女性别”，伽利略反驳：“邻居强壮却生5女，何解？”。&lt;/li>
+&lt;li>&lt;strong>智慧解析&lt;/strong>：
+&lt;ul>
+&lt;li>以具体案例挑战抽象理论；&lt;/li>
+&lt;li>用事实反驳权威，坚持“科学必须符合现实”；&lt;/li>
+&lt;li>展现“质疑-验证-重构”的科学提问范式。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="案例2知识结构图法提升学习效率">案例2：知识结构图法提升学习效率 &lt;a href="#%e6%a1%88%e4%be%8b2%e7%9f%a5%e8%af%86%e7%bb%93%e6%9e%84%e5%9b%be%e6%b3%95%e6%8f%90%e5%8d%87%e5%ad%a6%e4%b9%a0%e6%95%88%e7%8e%87" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>实践效果&lt;/strong>：学生小郑通过提炼错题关键点（如数学题的“已知条件-问题链”），2个月内从班级中游跃居前三。&lt;/li>
+&lt;li>&lt;strong>方法论延伸&lt;/strong>：
+&lt;ul>
+&lt;li>&lt;strong>“是何-为何-如何”三问法&lt;/strong>（语文阅读分析）；&lt;/li>
+&lt;li>&lt;strong>“输入-加工-输出”提问循环&lt;/strong>（网页6的“教给别人”记忆法）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="六提问能力的终身训练">六、提问能力的终身训练 &lt;a href="#%e5%85%ad%e6%8f%90%e9%97%ae%e8%83%bd%e5%8a%9b%e7%9a%84%e7%bb%88%e8%ba%ab%e8%ae%ad%e7%bb%83" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-日常训练工具">1. 日常训练工具 &lt;a href="#1-%e6%97%a5%e5%b8%b8%e8%ae%ad%e7%bb%83%e5%b7%a5%e5%85%b7" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>提问日记&lt;/strong>：每日记录3个优质问题并评估效果；&lt;/li>
+&lt;li>&lt;strong>苏格拉底式自问&lt;/strong>：对任何结论追问“为什么成立？”“反例是否存在？”。&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-进阶修炼方向">2. 进阶修炼方向 &lt;a href="#2-%e8%bf%9b%e9%98%b6%e4%bf%ae%e7%82%bc%e6%96%b9%e5%90%91" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>元问题意识&lt;/strong>：在提问中反思“当前问题是否触及本质？”；&lt;/li>
+&lt;li>&lt;strong>系统思维提问&lt;/strong>：通过“要素-连接-功能”三层次分析复杂系统。&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;p>&lt;strong>结语&lt;/strong>：提问不仅是获取答案的工具，更是重塑认知、推动变革的杠杆。从伽利略的颠覆性质疑到现代职场的高效沟通，提问的智慧贯穿人类文明的每一次跃迁。唯有保持“童真式追问”（胡适“问题丹”），方能在不确定的时代锚定思想的航向。&lt;/p></description></item><item><title>密码学基础</title><link>https://blahvalf.github.io/docs/information/secure/basic_cryptography/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/secure/basic_cryptography/</guid><description>&lt;h1 id="定义与目标">定义与目标 &lt;a href="#%e5%ae%9a%e4%b9%89%e4%b8%8e%e7%9b%ae%e6%a0%87" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>密码学是研究如何保护信息安全的科学。&lt;/p>
+&lt;p>核心目标：&lt;/p>
+&lt;ul>
+&lt;li>机密性（Confidentiality）：确保信息仅能被授权方读取（如加密电子邮件）。&lt;/li>
+&lt;li>完整性（Integrity）：防止信息被篡改（如数字签名验证文件未被修改）。&lt;/li>
+&lt;li>认证性（Authentication）：验证通信双方身份的真实性（如登录密码或生物识别）。&lt;/li>
+&lt;li>不可否认性（Non-repudiation）：防止发送者事后否认其行为（如区块链交易记录）。&lt;/li>
+&lt;/ul>
+&lt;h1 id="分类">分类 &lt;a href="#%e5%88%86%e7%b1%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;ul>
+&lt;li>技术原理分类
+&lt;ul>
+&lt;li>对称密码（Symmetric Cryptography）
+&lt;ul>
+&lt;li>定义：加密与解密使用同一密钥，也称为私钥密码。&lt;/li>
+&lt;li>分组密码：将明文分为固定长度的块进行加密（如AES、DES、3DES）
+&lt;ul>
+&lt;li>结构：Feistel网络（DES）、SPN结构（AES）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>流密码：将明文逐位加密（如RC4、ChaCha20）&lt;/li>
+&lt;li>特点：速度快，适合大数据量加密，但密钥分发困难。&lt;/li>
+&lt;li>应用场景：文件加密（AES）、无线通信（GSM中的A5/1算法）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>非对称密码（Asymmetric Cryptography）
+&lt;ul>
+&lt;li>定义：使用公钥加密、私钥解密，或私钥签名、公钥验证，也称公钥密码。&lt;/li>
+&lt;li>基于数论难题：RSA（大整数分解）、Diffie-Hellman（离散对数）&lt;/li>
+&lt;li>基于椭圆曲线：ECC（椭圆曲线离散对数）&lt;/li>
+&lt;li>特点：解决密钥分发问题，但计算效率低于对称加密。&lt;/li>
+&lt;li>应用场景：数字签名（RSA）、密钥交换（Diffie-Hellman）、证书认证（X.509）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>哈希函数（Hash Function）
+&lt;ul>
+&lt;li>定义：将任意长度输入映射为固定长度的输出（哈希值），具备单向性和抗碰撞性&lt;/li>
+&lt;li>传统哈希：SHA-256（比特币）、SHA-3（Keccak算法）&lt;/li>
+&lt;li>已淘汰算法：MD5（因碰撞攻击被弃用）&lt;/li>
+&lt;li>特点：不可逆，常用于数据完整性验证和密码存储（加盐哈希）&lt;/li>
+&lt;li>应用场景：区块链Merkle树、文件校验&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>功能目标分类
+&lt;ul>
+&lt;li>加密与解密
+&lt;ul>
+&lt;li>目标：保护数据机密性&lt;/li>
+&lt;li>技术：对称加密（AES）、非对称加密（RSA）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>数字签名（Digital Signature）
+&lt;ul>
+&lt;li>目标：实现认证性和不可否认性。&lt;/li>
+&lt;li>流程：发送方用私钥签名，接收方用公钥验证。&lt;/li>
+&lt;li>算法：RSA签名、ECDSA（比特币交易签名）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>消息认证码（MAC）
+&lt;ul>
+&lt;li>目标：验证数据来源和完整性。&lt;/li>
+&lt;li>技术：HMAC（基于哈希的MAC）、CMAC（基于分组密码的MAC）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>密钥交换（Key Exchange）
+&lt;ul>
+&lt;li>目标：安全协商共享密钥&lt;/li>
+&lt;li>算法：Diffie-Hellman、ECDH（椭圆曲线Diffie-Hellman）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>应用场景分类
+&lt;ul>
+&lt;li>网络通信安全
+&lt;ul>
+&lt;li>SSL/TLS：混合使用对称加密（AES）和非对称加密（RSA/ECC）。&lt;/li>
+&lt;li>VPN：IPsec协议中的ESP加密与AH认证。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>区块链与数字货币
+&lt;ul>
+&lt;li>椭圆曲线签名：比特币的ECDSA。&lt;/li>
+&lt;li>零知识证明：Zcash的zk-SNARKs。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>隐私保护技术
+&lt;ul>
+&lt;li>同态加密（Homomorphic Encryption）：允许在加密数据上直接运算（如医疗数据分析）。&lt;/li>
+&lt;li>安全多方计算（MPC）：多方协作计算数据，但各自隐私数据不泄露。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h1 id="古典密码">古典密码 &lt;a href="#%e5%8f%a4%e5%85%b8%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>古典密码学主要关注信息的保密书写和传递，以及与其相对应的破译方法。&lt;/p>
+&lt;ul>
+&lt;li>理解密码学基础：揭示加密核心思想（混淆与扩散），为现代密码学（如AES的S盒设计）奠定基础。&lt;/li>
+&lt;li>掌握密码分析入门：频率分析、卡西斯基试验等攻击方法，是密码分析思维的起点。&lt;/li>
+&lt;/ul>
+&lt;h2 id="替换密码">替换密码 &lt;a href="#%e6%9b%bf%e6%8d%a2%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>原理：将明文中的字符替换为另一字符（或符号）。&lt;/p>
+&lt;p>典型设计：&lt;/p></description></item><item><title>微观经济学基础</title><link>https://blahvalf.github.io/docs/economy/microeconomics_base/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/economy/microeconomics_base/</guid><description>&lt;p>曼昆的《经济学原理》作为经济学领域的经典教材，以其清晰的逻辑框架和生动的现实案例，为无数经济学学习者打开了微观经济学的大门。本文将以曼昆的微观经济学分册为基础，系统梳理微观经济学的核心概念与原理，从经济学十大原理这一基础框架出发，逐步深入到市场运行机制、消费者与生产者行为分析、不同市场结构下的企业决策，以及市场失灵与政府干预等重要议题。每个部分都将结合现实案例进行阐释，帮助读者理解这些抽象理论如何解释我们日常生活中的经济现象。通过这篇总结，读者不仅能够掌握微观经济学的基础知识体系，还能学会像经济学家一样思考现实世界中的资源配置问题。&lt;/p>
+&lt;h2 id="经济学十大原理与基础概念">经济学十大原理与基础概念 &lt;a href="#%e7%bb%8f%e6%b5%8e%e5%ad%a6%e5%8d%81%e5%a4%a7%e5%8e%9f%e7%90%86%e4%b8%8e%e5%9f%ba%e7%a1%80%e6%a6%82%e5%bf%b5" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>经济学作为一门研究稀缺资源配置的社会科学，其核心问题源于一个基本事实：&lt;strong>社会资源是有限的，而人类欲望是无限的&lt;/strong>。曼昆在《经济学原理》开篇即提出了贯穿全书的&amp;quot;经济学十大原理&amp;quot;，这些原理为我们理解个体决策、市场运行和整体经济提供了基本框架。&lt;strong>稀缺性&lt;/strong>（scarcity）是经济学研究的出发点，它指社会拥有的资源有限，无法生产人们希望拥有的所有物品与劳务。正是这种稀缺性的存在，使得人们必须做出选择，从而产生了经济学研究的三个基本问题：生产什么、如何生产和为谁生产。&lt;/p>
+&lt;p>曼昆将十大原理分为三组，分别对应个人决策、人们之间的交易以及整体经济运行。第一组原理关于&lt;strong>个人如何做出决策&lt;/strong>：人们面临权衡取舍（原理一）；某种东西的成本是为了得到它所放弃的东西，即机会成本（原理二）；理性人考虑边际量（原理三）；人们会对激励做出反应（原理四）。以大学生选择学习时间为例，在考试前夕，学生需要在复习和娱乐之间做出权衡（原理一）；选择多玩一小时游戏的成本是少了一小时复习可能导致的成绩下降（原理二）；理性的学生会考虑多复习一小时带来的边际收益是否大于边际成本（原理三）；如果教授宣布考试难度降低，学生可能会减少复习时间，这就是对激励的反应（原理四）。&lt;/p>
+&lt;p>第二组原理探讨&lt;strong>人们之间的相互交易&lt;/strong>：贸易可以使每个人的状况都变得更好（原理五）；市场通常是组织经济活动的一种好方法（原理六）；政府有时可以改善市场结果（原理七）。国际贸易的例子生动说明了这些原理：中国生产服装有比较优势，美国生产飞机有比较优势，两国通过贸易都能以更低的成本获得对方的产品（原理五）；市场价格机制像一只&amp;quot;看不见的手&amp;quot;引导资源流向最有效率的用途（原理六）；但当存在污染等外部性时，政府通过环保法规可以改善市场结果（原理七）。&lt;/p>
+&lt;p>第三组原理涉及&lt;strong>整体经济运行&lt;/strong>：一国的生活水平取决于它生产物品与劳务的能力即生产率（原理八）；货币发行过多导致物价上涨（原理九）；社会面临通货膨胀与失业之间的短期权衡取舍（原理十）。二战后日本和德国的经济奇迹展示了生产率对生活水平的关键作用（原理八）；津巴布韦和委内瑞拉的恶性通货膨胀印证了货币超发的后果（原理九）；而各国央行在经济增长与物价稳定间的政策权衡则体现了菲利普斯曲线的短期交替关系（原理十）。&lt;/p>
+&lt;p>理解这些经济学原理，有助于我们培养&lt;strong>经济学思维方式&lt;/strong>。经济学家使用模型（如循环流向图、生产可能性边界）简化复杂现实，区分实证表述（描述&amp;quot;是什么&amp;quot;）与规范表述（主张&amp;quot;应该是什么&amp;quot;），并通过科学方法分析经济现象。例如，生产可能性边界展示了在资源和技术给定情况下，一个经济体能生产的两种产品的各种组合，以及机会成本随产量变化的关系。假设一个国家只能生产汽车和食品，多生产一辆汽车意味着必须放弃一定数量的食品生产，这种权衡取舍关系正是经济学研究的核心。&lt;/p>
+&lt;pre class="mermaid">mindmap
+ root((经济学原理))
+ 个人决策
+ 原理1: 权衡取舍
+ 原理2: 机会成本
+ 原理3: 边际决策
+ 原理4: 激励反应
+ 交互作用
+ 原理5: 贸易增益
+ 原理6: 市场效率
+ 原理7: 政府职能
+ 整体经济
+ 原理8: 生产率
+ 原理9: 通货膨胀
+ 原理10: 失业通胀交替
+&lt;/pre>
+&lt;h2 id="市场运行机制供给与需求">市场运行机制：供给与需求 &lt;a href="#%e5%b8%82%e5%9c%ba%e8%bf%90%e8%a1%8c%e6%9c%ba%e5%88%b6%e4%be%9b%e7%bb%99%e4%b8%8e%e9%9c%80%e6%b1%82" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>供给与需求模型&lt;/strong>是微观经济学分析市场运行的核心工具，被称为&amp;quot;经济学家的工具箱&amp;quot;。这一模型解释了资源如何通过价格机制在市场经济中进行配置。&lt;strong>市场需求&lt;/strong>指的是在一定时期内，消费者在各种价格水平下愿意且能够购买的商品或服务数量。根据需求定理，在其他条件不变的情况下，商品价格上升会导致需求量减少，反之亦然。这种反向关系可以用需求曲线直观表示：一条从左上方向右下方倾斜的曲线。例如，当智能手机价格从5000元降至3000元时，市场上愿意购买的消费者数量通常会增加。&lt;/p>
+&lt;p>影响需求的因素远不止价格，还包括&lt;strong>消费者偏好&lt;/strong>、收入水平、相关商品价格（替代品和互补品）以及消费者预期等。收入增加会提高对正常商品（如优质肉类、品牌服装）的需求，但减少对低档商品（如方便面、公共交通）的需求。替代品（如茶叶与咖啡）和互补品（如手机与流量套餐）的价格变动也会影响需求：咖啡价格上涨可能导致茶叶需求增加；而流量费下降可能提升智能手机销量。2020年疫情期间，居家办公导致笔记本电脑需求激增，就是一个现实案例。&lt;/p>
+&lt;p>&lt;strong>市场供给&lt;/strong>则指生产者在各种价格水平下愿意且能够提供的商品或服务数量。供给定理表明，价格与供给量之间存在正向关系，这体现为向右上方倾斜的供给曲线。影响供给的因素包括生产成本（原材料价格、工资水平等）、技术水平、生产者数量以及生产者对未来价格的预期。例如，芯片制造技术的进步降低了智能手机生产成本，使厂商在相同价格下愿意供应更多产品；而原油价格上涨预期可能导致石油公司减少当前供应，等待更高价格。&lt;/p>
+&lt;p>当供给与需求力量相互作用时，市场会趋向于&lt;strong>均衡状态&lt;/strong>——供给量与需求量相等时的价格和数量。均衡价格是市场自发调节的结果，此时既无短缺也无过剩。以房地产市场为例，当政府限制购房资格导致需求减少时，需求曲线左移，均衡价格和交易量都会下降；而建筑成本上升使供给曲线左移，将导致价格上升但交易量减少。2022年全球芯片短缺就是典型非均衡状态：疫情后需求激增而供给受限，导致芯片价格飙升，直至2023年供需逐渐恢复平衡。&lt;/p>
+&lt;p>&lt;strong>价格弹性&lt;/strong>衡量供需对价格变动的敏感程度，对企业和政策制定者至关重要。需求价格弹性取决于商品必要性、替代品可获得性、消费占收入比例以及时间跨度。生活必需品（如食盐、药品）通常缺乏弹性，而奢侈品（如高端旅游）弹性较大。企业利用弹性理论制定定价策略：弹性小的商品可适当提价增加收益，而弹性大的商品则可能通过降价扩大市场份额。政府征税时也会考虑弹性——对香烟等缺乏弹性的商品征税，既能增加财政收入又不会大幅减少销量。&lt;/p>
+&lt;p>供给与需求模型的实际应用广泛存在于&lt;strong>政府政策分析&lt;/strong>中。价格管制（如最高限价和最低限价）会干扰市场均衡，导致非效率。租金管制可能造成租房短缺，而农产品最低保护价则可能导致过剩库存。税收负担的实际分配也取决于供需弹性：弹性较小的一方承担更多税负。例如，烟草税主要由消费者承担，因为吸烟者对香烟的需求相对缺乏弹性；而针对旅游服务的税收则更多由供给方承担，因为消费者可以轻易选择不旅游或去其他地方。&lt;/p>
+&lt;p>&lt;em>表：影响需求与供给的因素比较&lt;/em>&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>&lt;strong>类别&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>需求影响因素&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>供给影响因素&lt;/strong>&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;strong>价格因素&lt;/strong>&lt;/td>
+ &lt;td>商品自身价格（需求定理）&lt;/td>
+ &lt;td>商品自身价格（供给定理）&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;strong>非价格因素&lt;/strong>&lt;/td>
+ &lt;td>消费者收入、相关商品价格、偏好、预期、买家数量&lt;/td>
+ &lt;td>生产成本、技术水平、卖家数量、生产者预期、自然条件&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;strong>弹性决定因素&lt;/strong>&lt;/td>
+ &lt;td>替代品可获得性、商品性质（必需品/奢侈品）、消费占比、时间跨度&lt;/td>
+ &lt;td>生产能力调整难度、时间跨度、库存水平、生产要素流动性&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;pre class="mermaid">graph TD
+ subgraph 市场均衡
+ S[供给曲线] --&amp;gt;|价格↑ 供给量↑| E(均衡点)
+ D[需求曲线] --&amp;gt;|价格↑ 需求量↓| E
+ end
+
+ E --&amp;gt; P[均衡价格 P*]
+ E --&amp;gt; Q[均衡数量 Q*]
+
+ P -.-&amp;gt;|价格调节| 动态[市场调节机制]
+ 
+ subgraph 动态[市场调节机制]
+ 高价[价格过高] --&amp;gt; 过剩[供过于求] --&amp;gt; 降价[价格↓] --&amp;gt; E
+ 低价[价格过低] --&amp;gt; 短缺[供不应求] --&amp;gt; 涨价[价格↑] --&amp;gt; E
+ end
+
+ class S,供给曲线 supply
+ class D,需求曲线 demand
+ class E,均衡点 equilibrium
+ class P,Q keynode
+
+ classDef supply fill:#f0f4ff,stroke:#4a90e2
+ classDef demand fill:#fff0f0,stroke:#eb4d4b
+ classDef equilibrium fill:#f8f9fa,stroke:#2ecc71,stroke-width:2px
+ classDef keynode fill:#eaf7ed,stroke:#27ae60
+&lt;/pre>
+&lt;h2 id="消费者行为理论">消费者行为理论 &lt;a href="#%e6%b6%88%e8%b4%b9%e8%80%85%e8%a1%8c%e4%b8%ba%e7%90%86%e8%ae%ba" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>消费者选择理论&lt;/strong>揭示了个人如何在有限收入的约束下做出最优购买决策，以实现满足感最大化。这一理论的核心假设是消费者是理性的，他们会系统性地选择能带来最大效用的商品组合。&lt;strong>效用&lt;/strong>（Utility）是衡量消费者从商品或服务中获得满足程度的抽象概念，可分为基数效用（可计量）和序数效用（可排序）两种理论。虽然我们无法精确测量效用值，但这一概念帮助我们理解消费者偏好和选择行为。&lt;/p></description></item><item><title>摩旅清单</title><link>https://blahvalf.github.io/docs/mix/list/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/list/</guid><description>&lt;p>&lt;strong>日常&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>证件&lt;/li>
+&lt;li>充电器&lt;/li>
+&lt;li>充电宝&lt;/li>
+&lt;li>洗漱包&lt;/li>
+&lt;li>指甲刀&lt;/li>
+&lt;li>小刀&lt;/li>
+&lt;li>袜子&lt;/li>
+&lt;li>内裤&lt;/li>
+&lt;li>短裤&lt;/li>
+&lt;li>外套&lt;/li>
+&lt;li>帽子&lt;/li>
+&lt;li>卫生纸&lt;/li>
+&lt;li>湿巾&lt;/li>
+&lt;li>垃圾袋&lt;/li>
+&lt;li>纸笔&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>装备&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>骑行服&lt;/li>
+&lt;li>头盔&lt;/li>
+&lt;li>手套&lt;/li>
+&lt;li>头套&lt;/li>
+&lt;li>雨衣&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>应急&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>补胎&lt;/li>
+&lt;li>套筒&lt;/li>
+&lt;li>棘轮扳手&lt;/li>
+&lt;li>充气泵&lt;/li>
+&lt;li>锯子&lt;/li>
+&lt;li>锤子&lt;/li>
+&lt;li>钳子&lt;/li>
+&lt;li>扎带&lt;/li>
+&lt;li>尺子&lt;/li>
+&lt;li>汽油瓶&lt;/li>
+&lt;li>电工胶布&lt;/li>
+&lt;li>保险丝&lt;/li>
+&lt;li>打火机&lt;/li>
+&lt;li>打火石&lt;/li>
+&lt;li>抽油管&lt;/li>
+&lt;li>螺丝胶&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;ul>
+&lt;li>纱布&lt;/li>
+&lt;li>碘伏&lt;/li>
+&lt;li>酒精&lt;/li>
+&lt;li>创可贴&lt;/li>
+&lt;li>角鲨烯&lt;/li>
+&lt;li>风油精&lt;/li>
+&lt;li>布洛芬&lt;/li>
+&lt;li>红霉素软膏&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>露营&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>帐篷&lt;/li>
+&lt;li>垫子&lt;/li>
+&lt;li>睡袋&lt;/li>
+&lt;li>睡垫&lt;/li>
+&lt;li>枕头&lt;/li>
+&lt;li>眼罩&lt;/li>
+&lt;li>桌子&lt;/li>
+&lt;li>椅子&lt;/li>
+&lt;li>筷子&lt;/li>
+&lt;li>勺子&lt;/li>
+&lt;li>炉头&lt;/li>
+&lt;li>气罐&lt;/li>
+&lt;li>杯锅&lt;/li>
+&lt;li>水袋&lt;/li>
+&lt;li>灯&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>拍摄&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>三脚架&lt;/li>
+&lt;li>八爪鱼&lt;/li>
+&lt;li>DJI Action&lt;/li>
+&lt;li>DJI Pocket&lt;/li>
+&lt;li>飞行器&lt;/li>
+&lt;/ul></description></item><item><title>资源对象</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/resources/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/resources/</guid><description>&lt;p>以下列举的内容都是 Kubernetes 中的对象（Object），这些对象都可以在 YAML 文件中作为一种 API 类型来配置。&lt;/p>
+&lt;ul>
+&lt;li>Pod&lt;/li>
+&lt;li>Node&lt;/li>
+&lt;li>Namespace&lt;/li>
+&lt;li>Service&lt;/li>
+&lt;li>Volume&lt;/li>
+&lt;li>PersistentVolume&lt;/li>
+&lt;li>Deployment&lt;/li>
+&lt;li>Secret&lt;/li>
+&lt;li>StatefulSet&lt;/li>
+&lt;li>DaemonSet&lt;/li>
+&lt;li>ServiceAccount&lt;/li>
+&lt;li>ReplicationController&lt;/li>
+&lt;li>ReplicaSet&lt;/li>
+&lt;li>Job&lt;/li>
+&lt;li>CronJob&lt;/li>
+&lt;li>SecurityContext&lt;/li>
+&lt;li>ResourceQuota&lt;/li>
+&lt;li>LimitRange&lt;/li>
+&lt;li>HorizontalPodAutoscaling&lt;/li>
+&lt;li>Ingress&lt;/li>
+&lt;li>ConfigMap&lt;/li>
+&lt;li>Label&lt;/li>
+&lt;li>CustomResourceDefinition&lt;/li>
+&lt;li>Role&lt;/li>
+&lt;li>ClusterRole&lt;/li>
+&lt;/ul>
+&lt;p>我将它们简单的分类为以下几种资源对象：&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th style="text-align: left">类别&lt;/th>
+ &lt;th>名称&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td style="text-align: left">资源对象&lt;/td>
+ &lt;td>Pod、ReplicaSet、ReplicationController、Deployment、StatefulSet、DaemonSet、Job、CronJob、HorizontalPodAutoscaling、Node、Namespace、Service、Ingress、Label、CustomResourceDefinition&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">存储对象&lt;/td>
+ &lt;td>Volume、PersistentVolume、Secret、ConfigMap&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">策略对象&lt;/td>
+ &lt;td>SecurityContext、ResourceQuota、LimitRange&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">身份对象&lt;/td>
+ &lt;td>ServiceAccount、Role、ClusterRole&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="理解-kubernetes-中的对象">理解 Kubernetes 中的对象 &lt;a href="#%e7%90%86%e8%a7%a3-kubernetes-%e4%b8%ad%e7%9a%84%e5%af%b9%e8%b1%a1" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>在 Kubernetes 系统中，&lt;em>Kubernetes 对象&lt;/em> 是持久化的条目。Kubernetes 使用这些条目去表示整个集群的状态。特别地，它们描述了如下信息：&lt;/p>
+&lt;ul>
+&lt;li>什么容器化应用在运行（以及在哪个 Node 上）&lt;/li>
+&lt;li>可以被应用使用的资源&lt;/li>
+&lt;li>关于应用如何表现的策略，比如重启策略、升级策略，以及容错策略&lt;/li>
+&lt;/ul>
+&lt;p>Kubernetes 对象是 “目标性记录” —— 一旦创建对象，Kubernetes 系统将持续工作以确保对象存在。通过创建对象，可以有效地告知 Kubernetes 系统，所需要的集群工作负载看起来是什么样子的，这就是 Kubernetes 集群的 &lt;strong>期望状态&lt;/strong>。&lt;/p>
+&lt;p>与 Kubernetes 对象工作 —— 是否创建、修改，或者删除 —— 需要使用 Kubernetes API。当使用 &lt;code>kubectl&lt;/code> 命令行接口时，比如，CLI 会使用必要的 Kubernetes API 调用，也可以在程序中直接使用 Kubernetes API。为了实现该目标，Kubernetes 当前提供了一个 &lt;code>golang&lt;/code> &lt;a href="https://github.com/kubernetes/client-go" rel="external" target="_blank">客户端库&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> ，其它语言库（例如&lt;a href="https://github.com/kubernetes-incubator/client-python" rel="external" target="_blank">Python&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>）也正在开发中。&lt;/p></description></item><item><title>问题分析：5W2H</title><link>https://blahvalf.github.io/docs/develop/analysis/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/develop/analysis/</guid><description>&lt;h4 id="一方法概述">一、方法概述 &lt;a href="#%e4%b8%80%e6%96%b9%e6%b3%95%e6%a6%82%e8%bf%b0" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;p>5W2H分析法是一种经典的问题分析与解决工具，通过7个维度（What、Why、Who、When、Where、How、How Much）对问题进行系统性拆解，帮助用户全面理解问题本质，制定有效行动方案。该方法最早由美国陆军在二战期间提出，后经管理学界优化推广，现被广泛应用于商业决策、项目管理、问题诊断等多个领域。&lt;/p>
+&lt;hr>
+&lt;h4 id="二核心要素解析">二、核心要素解析 &lt;a href="#%e4%ba%8c%e6%a0%b8%e5%bf%83%e8%a6%81%e7%b4%a0%e8%a7%a3%e6%9e%90" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>What（何事）&lt;/strong>&lt;br>
+明确问题本质：&amp;ldquo;究竟发生了什么？需要解决的核心是什么？&amp;rdquo;&lt;br>
+例：某电商平台用户流失率上升至20%（明确现象）&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Why（何因）&lt;/strong>&lt;br>
+追溯根源：&amp;ldquo;导致问题的根本原因是什么？&amp;rdquo;&lt;br>
+例：因物流时效延长导致用户满意度下降（因果关系分析）&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Who（何人）&lt;/strong>&lt;br>
+界定责任主体：&amp;ldquo;问题涉及哪些人？谁负责解决？&amp;rdquo;&lt;br>
+例：物流部门需牵头改进，客服团队配合处理投诉&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>When（何时）&lt;/strong>&lt;br>
+时间维度管理：&amp;ldquo;问题何时发生？解决期限为何时？&amp;rdquo;&lt;br>
+例：物流延迟自3月起持续发生，需在2周内改善&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Where（何地）&lt;/strong>&lt;br>
+空间定位：&amp;ldquo;问题发生的具体场景或区域？&amp;rdquo;&lt;br>
+例：华东地区仓储中心配送延误最严重&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>How（如何）&lt;/strong>&lt;br>
+解决方案设计：&amp;ldquo;通过什么方法解决问题？&amp;rdquo;&lt;br>
+例：优化仓储布局+引入智能调度系统&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>How Much（何量）&lt;/strong>&lt;br>
+量化评估：&amp;ldquo;需要多少资源投入？预期效果如何量化？&amp;rdquo;&lt;br>
+例：投入50万元系统升级，目标3周内时效提升30%&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;hr>
+&lt;h4 id="三应用价值">三、应用价值 &lt;a href="#%e4%b8%89%e5%ba%94%e7%94%a8%e4%bb%b7%e5%80%bc" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ol>
+&lt;li>&lt;strong>系统化思维&lt;/strong>：避免碎片化认知，7维度覆盖问题全貌&lt;/li>
+&lt;li>&lt;strong>精准定位&lt;/strong>：通过分层追问直达问题核心（如丰田&amp;quot;5个为什么&amp;quot;的延伸）&lt;/li>
+&lt;li>&lt;strong>执行导向&lt;/strong>：自然导出可落地的行动计划&lt;/li>
+&lt;li>&lt;strong>沟通工具&lt;/strong>：结构化框架提升团队协作效率&lt;/li>
+&lt;/ol>
+&lt;hr>
+&lt;h4 id="四实施步骤示范以产品推广为例">四、实施步骤示范（以产品推广为例） &lt;a href="#%e5%9b%9b%e5%ae%9e%e6%96%bd%e6%ad%a5%e9%aa%a4%e7%a4%ba%e8%8c%83%e4%bb%a5%e4%ba%a7%e5%93%81%e6%8e%a8%e5%b9%bf%e4%b8%ba%e4%be%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ol>
+&lt;li>What：新产品市场渗透率未达预期&lt;/li>
+&lt;li>Why：目标用户认知度不足，竞品抢占先机&lt;/li>
+&lt;li>Who：市场部主导，销售部协同执行&lt;/li>
+&lt;li>When：Q2启动推广，8月底前完成首阶段&lt;/li>
+&lt;li>Where：重点突破一线城市KA渠道&lt;/li>
+&lt;li>How：KOL营销+体验店快闪活动&lt;/li>
+&lt;li>How Much：预算120万，目标触达50万潜在用户&lt;/li>
+&lt;/ol>
+&lt;hr>
+&lt;h4 id="五使用建议">五、使用建议 &lt;a href="#%e4%ba%94%e4%bd%bf%e7%94%a8%e5%bb%ba%e8%ae%ae" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>&lt;strong>组合应用&lt;/strong>：可结合SWOT、鱼骨图等工具深化分析&lt;/li>
+&lt;li>&lt;strong>动态调整&lt;/strong>：根据实施反馈循环优化各维度策略&lt;/li>
+&lt;li>&lt;strong>避免误区&lt;/strong>：需区分客观事实与主观推测，确保数据支撑&lt;/li>
+&lt;li>&lt;strong>效率优化&lt;/strong>：使用思维导图工具进行可视化呈现&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h4 id="结语">结语 &lt;a href="#%e7%bb%93%e8%af%ad" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;p>5W2H作为结构化思维的经典框架，其价值在于将混沌的问题转化为可操作的行动蓝图。掌握这一方法，既能提升个人问题分析能力，也可作为团队建立系统性工作语言的通用工具。建议在初期使用时严格遵循7要素模板，熟练后可灵活调整维度组合，实现工具与场景的最佳适配。&lt;/p></description></item><item><title>ConfigMap</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/configmap/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/configmap/</guid><description>&lt;p>其实 ConfigMap 功能在 Kubernetes1.2 版本的时候就有了，许多应用程序会从配置文件、命令行参数或环境变量中读取配置信息。这些配置信息需要与 docker image 解耦，你总不能每修改一个配置就重做一个 image 吧？ConfigMap API 给我们提供了向容器中注入配置信息的机制，ConfigMap 可以被用来保存单个属性，也可以用来保存整个配置文件或者 JSON 二进制大对象。&lt;/p>
+&lt;h2 id="configmap-概览">ConfigMap 概览 &lt;a href="#configmap-%e6%a6%82%e8%a7%88" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>ConfigMap API&lt;/strong> 资源用来保存 &lt;strong>key-value pair&lt;/strong> 配置数据，这个数据可以在 &lt;strong>pods&lt;/strong> 里使用，或者被用来为像 &lt;strong>controller&lt;/strong> 一样的系统组件存储配置数据。虽然 ConfigMap 跟 &lt;a href="https://kubernetes.io/docs/user-guide/secrets/" rel="external" target="_blank">Secrets&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 类似，但是 ConfigMap 更方便的处理不含敏感信息的字符串。 注意：ConfigMaps 不是属性配置文件的替代品。ConfigMaps 只是作为多个 properties 文件的引用。你可以把它理解为 Linux 系统中的 &lt;code>/etc&lt;/code> 目录，专门用来存储配置文件的目录。下面举个例子，使用 ConfigMap 配置来创建 Kubernetes Volumes，ConfigMap 中的每个 data 项都会成为一个新文件。&lt;/p></description></item><item><title>Pod</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/pod/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/pod/</guid><description>&lt;h2 id="概念">概念 &lt;a href="#%e6%a6%82%e5%bf%b5" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Pod 是 Kubernetes 中最小的可部署单元，代表集群中运行的一个应用实例，由一个或多个紧密关联的容器组成。这些容器共享网络命名空间（同一 IP 和端口）、存储卷及其他资源，支持协同工作模式（如主容器与 sidecar 辅助容器配合）。通常情况下，每个 Pod 封装单个容器，但在需要耦合协作的场景（如日志收集、配置同步）中可包含多个容器。Pod 不直接管理，而是通过控制器（如 Deployment）进行复制扩展（运行多个相同 Pod 实现水平扩容），且支持 Docker 在内的多种容器运行时。&lt;/p>
+&lt;p>Pod 支持在同一节点上运行多个容器，这些容器共享网络命名空间（同一IP和端口）及存储卷，形成紧密协作的进程组。典型用例是主容器（如Web服务）与Sidecar容器（如日志收集、配置更新）协同工作：&lt;/p>
+&lt;ul>
+&lt;li>网络共享：容器通过 localhost 直接通信，对外暴露统一IP。&lt;/li>
+&lt;li>存储共享：多个容器可读写同一持久化Volume，避免数据丢失。&lt;/li>
+&lt;li>调度特性：容器始终被共同调度到同一节点，确保低延迟协作。&lt;/li>
+&lt;/ul>
+&lt;p>⚠️ 适用场景：仅当容器需强耦合（如实时文件同步、依赖本地通信）时使用多容器Pod，否则优先采用单容器Pod+独立服务设计，以降低复杂度。&lt;/p>
+&lt;p>在 Kubernetes 中，Pod 作为短暂且易失的实体，通常不直接单独创建，因其缺乏自愈能力且生命周期受节点故障、资源不足或进程终止等影响而无法持久。为确保高可用性和弹性，用户通过更高级的 Controller（如 Deployment、StatefulSet、DaemonSet）管理 Pod。Controller 基于 Pod 模板动态创建并维护 Pod 集群，提供副本控制、滚动升级及自愈能力，例如在节点故障时自动将 Pod 重新调度至健康节点，从而抽象化底层运维复杂度，保障应用持续稳定运行。&lt;/p>
+&lt;h3 id="动机">动机 &lt;a href="#%e5%8a%a8%e6%9c%ba" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>管理： Pod 是一个服务的多个进程的聚合单位，pod 提供这种模型能够简化应用部署管理，通过提供一个更高级别的抽象的方式。Pod 作为一个独立的部署单位，支持横向扩展和复制。共生（协同调度），命运共同体（例如被终结），协同复制，资源共享，依赖管理，pod 都会自动的为容器处理这些问题。&lt;/li>
+&lt;li>资源共享和通信： Pod 中的应用可以共享网络空间（IP 地址和端口），因此可以通过 localhost 互相发现。Pod 中的应用容器可以共享卷。持久化卷能够保证 pod 重启时使用的数据不丢失。&lt;/li>
+&lt;/ul>
+&lt;h3 id="持久性">持久性 &lt;a href="#%e6%8c%81%e4%b9%85%e6%80%a7" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>Pod 在设计支持就不是作为持久化实体的。在调度失败、节点故障、缺少资源或者节点维护的状态下都会死掉会被驱逐。&lt;/p>
+&lt;p>通常，用户不需要手动直接创建 Pod，而是应该使用 controller（例如 Deployments），即使是在创建单个 Pod 的情况下。Controller 可以提供集群级别的自愈功能、复制和升级管理。&lt;/p></description></item><item><title>RBAC</title><link>https://blahvalf.github.io/docs/information/software/cloud/auth/rbac/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/auth/rbac/</guid><description>&lt;p>&lt;strong>注意：本文基于 Kubernetes 1.6 撰写，当时 RBAC 模式处于 beta 版本。&lt;/strong>&lt;/p>
+&lt;p>基于角色的访问控制（Role-Based Access Control，即”RBAC”）使用 &lt;code>rbac.authorization.k8s.io&lt;/code> API Group 实现授权决策，允许管理员通过 Kubernetes API 动态配置策略。&lt;/p>
+&lt;p>要启用 RBAC，请使用 &lt;code>--authorization-mode=RBAC&lt;/code> 启动 API Server。&lt;/p>
+&lt;h2 id="api-概述">API 概述 &lt;a href="#api-%e6%a6%82%e8%bf%b0" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>本节将介绍 RBAC API 所定义的四种顶级类型。用户可以像使用其他 Kubernetes API 资源一样 （例如通过 &lt;code>kubectl&lt;/code>、API 调用等）与这些资源进行交互。例如，命令 &lt;code>kubectl create -f (resource).yml&lt;/code> 可以被用于以下所有的例子，当然，读者在尝试前可能需要先阅读以下相关章节的内容。&lt;/p>
+&lt;h3 id="role-与-clusterrole">Role 与 ClusterRole &lt;a href="#role-%e4%b8%8e-clusterrole" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>在 RBAC API 中，一个角色包含了一套表示一组权限的规则。 权限以纯粹的累加形式累积（没有” 否定” 的规则）。 角色可以由命名空间（namespace）内的 &lt;code>Role&lt;/code> 对象定义，而整个 Kubernetes 集群范围内有效的角色则通过 &lt;code>ClusterRole&lt;/code> 对象实现。&lt;/p>
+&lt;p>一个 &lt;code>Role&lt;/code> 对象只能用于授予对某一单一命名空间中资源的访问权限。 以下示例描述了”default” 命名空间中的一个 &lt;code>Role&lt;/code> 对象的定义，用于授予对 pod 的读访问权限：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="0dc4f9a" class="language-yaml ">
+ &lt;code>kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+ namespace: default
+ name: pod-reader
+rules:
+- apiGroups: [&amp;#34;&amp;#34;] # 空字符串&amp;#34;&amp;#34; 表明使用 core API group
+ resources: [&amp;#34;pods&amp;#34;]
+ verbs: [&amp;#34;get&amp;#34;, &amp;#34;watch&amp;#34;, &amp;#34;list&amp;#34;]&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>&lt;code>ClusterRole&lt;/code> 对象可以授予与 &lt;code>Role&lt;/code> 对象相同的权限，但由于它们属于集群范围对象， 也可以使用它们授予对以下几种资源的访问权限：&lt;/p></description></item><item><title>宏观经济学基础</title><link>https://blahvalf.github.io/docs/economy/macroeconomics_base/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/economy/macroeconomics_base/</guid><description>&lt;p>宏观经济学作为理解整体经济运行规律的重要学科，奥利维尔·布兰查德的经典教材《宏观经济学》系统性地构建了从短期到长期的分析框架。本文将以布兰查德的宏观经济学体系为基础，详细梳理宏观经济学的核心概念、基础模型和政策应用，通过理论阐释与实例分析相结合的方式，帮助读者建立起完整的宏观经济学知识架构。文章将从宏观经济的基本度量开始，逐步深入到商品市场、金融市场分析，进而探讨劳动力市场与总供给总需求模型，最后延伸至经济增长理论和开放经济下的宏观经济学，每个部分都将配以现实经济案例和数据分析，使抽象理论具象化，复杂模型清晰化。&lt;/p>
+&lt;h2 id="宏观经济的基本概念与度量">宏观经济的基本概念与度量 &lt;a href="#%e5%ae%8f%e8%a7%82%e7%bb%8f%e6%b5%8e%e7%9a%84%e5%9f%ba%e6%9c%ac%e6%a6%82%e5%bf%b5%e4%b8%8e%e5%ba%a6%e9%87%8f" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>国内生产总值(GDP)&lt;strong>作为宏观经济学最核心的度量指标，是指在一定时期内(通常为一个季度或一年)，一个国家或地区经济中所生产出的&lt;/strong>全部最终产品和服务&lt;/strong>的市场价值总和。理解GDP需要把握几个关键特征：它仅包括最终产品价值而排除中间产品以避免重复计算；它是一个市场价值概念，通过货币衡量；仅包含市场活动导致的价值，非市场活动如家务劳动不计入；它是一个流量而非存量概念。GDP的核算主要有三种方法：生产法(总产出减中间投入)、收入法(劳动者报酬+生产税净额+固定资产折旧+营业盈余)和支出法(消费+投资+政府购买+净出口)。&lt;/p>
+&lt;p>&lt;strong>通货膨胀与失业&lt;/strong>是宏观经济运行的两大核心问题。通货膨胀指一般物价水平持续上涨的现象，而通货紧缩则相反。布兰查德特别强调了&lt;strong>滞胀&lt;/strong>这一特殊现象——即高通胀与高失业同时存在的困境，如1970年代石油危机期间西方国家经历的状况。失业率衡量的是劳动力中没有工作但正在积极寻找工作的人口比例，而参与率则是劳动年龄人口中实际参与劳动市场的比例。这些指标共同反映了经济体的健康状况，例如2008年金融危机后，美国失业率一度飙升至10%，反映了经济的严重衰退。&lt;/p>
+&lt;p>&lt;strong>价格指数&lt;/strong>是衡量通胀水平的重要工具。GDP平减指数反映了国内生产的所有最终产品价格变化，而消费者价格指数(CPI)则衡量典型消费者购买的一篮子商品和服务的成本变化。例如，若某年GDP平减指数从100上升至105，则表示总体价格水平上涨了5%。布兰查德还介绍了&lt;strong>购买力平价&lt;/strong>(PPP)理论，该理论认为长期来看汇率会调整至使不同国家一篮子商品价格相等的水平，这解释了为什么人均GDP按市场汇率和按PPP计算会有显著差异，如中国的人均GDP按PPP计算约为美国的六分之一。&lt;/p>
+&lt;p>宏观经济学的分析通常分为三个时间维度：&lt;strong>短期&lt;/strong>关注经济波动和稳定性政策，主要工具是IS-LM模型；&lt;strong>中期&lt;/strong>分析经济如何回归自然产出水平，核心是AS-AD模型；&lt;strong>长期&lt;/strong>则聚焦经济增长的决定因素，索洛模型是基本分析框架。这种时间维度的划分为理解复杂经济现象提供了清晰思路，例如面对2020年新冠疫情冲击时，各国政府首先采取短期稳定措施(如美国的2万亿美元刺激计划)，随后逐步转向中期结构调整，而长期则需考虑疫情对潜在增长的影响。&lt;/p>
+&lt;p>&lt;em>表：GDP核算的三种方法比较&lt;/em>&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>&lt;strong>核算方法&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>基本公式&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>主要构成&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>适用场景&lt;/strong>&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;strong>生产法&lt;/strong>&lt;/td>
+ &lt;td>GDP=总产出-中间投入&lt;/td>
+ &lt;td>各产业部门增加值之和&lt;/td>
+ &lt;td>分析产业结构变化&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;strong>收入法&lt;/strong>&lt;/td>
+ &lt;td>GDP=劳动者报酬+生产税净额+固定资产折旧+营业盈余&lt;/td>
+ &lt;td>生产要素获得的收入&lt;/td>
+ &lt;td>研究收入分配格局&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;strong>支出法&lt;/strong>&lt;/td>
+ &lt;td>GDP=C+I+G+(X-M)&lt;/td>
+ &lt;td>消费、投资、政府购买、净出口&lt;/td>
+ &lt;td>观察需求结构变化&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;p>宏观经济政策的目标通常包括：&lt;strong>稳定物价&lt;/strong>(低通胀)、&lt;strong>充分就业&lt;/strong>、&lt;strong>经济增长&lt;/strong>和&lt;strong>国际收支平衡&lt;/strong>。这些目标之间可能存在冲突，例如短期内刺激就业可能导致通胀压力上升，这正体现了菲利普斯曲线所描述的失业与通胀之间的替代关系。政策制定者需要在多重目标间寻求平衡，例如美联储在制定货币政策时既考虑就业市场状况也关注通胀预期，采用&amp;quot;对称性通胀目标&amp;quot;框架允许通胀率暂时高于2%的目标以支持就业。&lt;/p>
+&lt;h2 id="商品市场与is曲线分析">商品市场与IS曲线分析 &lt;a href="#%e5%95%86%e5%93%81%e5%b8%82%e5%9c%ba%e4%b8%8eis%e6%9b%b2%e7%ba%bf%e5%88%86%e6%9e%90" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>凯恩斯交叉模型&lt;/strong>构成了理解商品市场均衡的基础框架。该模型的核心在于&lt;strong>计划支出等于实际产出&lt;/strong>的均衡条件，其中计划支出(E)由消费(C)、投资(I)和政府支出(G)组成：E = C(Y-T) + I + G。消费函数C = c0 + c1(Y-T)表明消费取决于自主消费c0和边际消费倾向c1(通常0&amp;lt;c1&amp;lt;1)，可支配收入(Y-T)则是总收入减税收。例如，若边际消费倾向为0.8，税收减少100亿元将导致消费增加80亿元，通过乘数效应最终使总产出增加更多。&lt;/p>
+&lt;p>&lt;strong>乘数效应&lt;/strong>揭示了自主支出变化对产出的放大作用。在基础凯恩斯模型中，乘数公式为1/(1-c1)，边际消费倾向越大，乘数效应越显著。这一机制解释了为什么政府在经济衰退时增加公共投资能有效刺激经济——假设c1=0.75，则政府支出增加100亿元最终将带来400亿元的总产出增长(乘数为4)。2009年美国《复苏与再投资法案》正是基于这一逻辑，推出了7870亿美元的财政刺激计划以应对金融危机后的经济衰退。&lt;/p>
+&lt;p>&lt;strong>IS曲线&lt;/strong>代表了商品市场上产出(Y)与利率(r)之间的均衡关系，其推导基于投资是利率的减函数这一假设：I = I(r)。利率上升将提高融资成本，抑制企业投资，从而减少总需求和均衡产出，这解释了IS曲线向下倾斜的形状。IS曲线的位置取决于自主支出(如政府支出、消费者信心等)，例如2020年新冠疫情期间，各国政府大幅增加公共卫生支出和转移支付，相当于使IS曲线向右移动，部分抵消了私人部门支出下降的负面影响。&lt;/p>
+&lt;p>财政政策通过直接影响IS曲线的位置来调控经济。&lt;strong>扩张性财政政策&lt;/strong>(增加政府支出或减税)会提升总需求，使IS曲线右移；而紧缩性政策则相反。布兰查德特别分析了财政政策乘数的不确定性——在实际中，乘数可能小于理论值，因为部分支出可能&amp;quot;挤出&amp;quot;私人投资，或者家庭预期未来增税而增加储蓄(李嘉图等价)。例如，2010-2012年欧元区国家实施的财政紧缩政策导致IS曲线左移，加剧了经济衰退，部分因为乘数效应被低估。&lt;/p>
+&lt;p>商品市场的动态调整过程展现了宏观经济的内在稳定性机制。当实际产出高于均衡水平时，非计划库存积累将促使企业减产；反之，库存减少将刺激增产。这一机制在汽车产业表现明显——当需求意外下降时，未售车辆积压会促使厂商调整生产计划。然而，布兰查德指出这种调整并非瞬间完成，时滞可能导致短期内产出波动，这正是需要政策干预的理论基础。&lt;/p>
+&lt;p>&lt;em>表：影响IS曲线位置的主要因素&lt;/em>&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>&lt;strong>影响因素&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>变化方向&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>IS曲线移动方向&lt;/strong>&lt;/th>
+ &lt;th>&lt;strong>经济实例&lt;/strong>&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>政府支出(G)&lt;/td>
+ &lt;td>增加&lt;/td>
+ &lt;td>右移&lt;/td>
+ &lt;td>2009年美国刺激计划&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>税收(T)&lt;/td>
+ &lt;td>减少&lt;/td>
+ &lt;td>右移&lt;/td>
+ &lt;td>2017年美国减税法案&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>消费者信心(c0)&lt;/td>
+ &lt;td>提升&lt;/td>
+ &lt;td>右移&lt;/td>
+ &lt;td>疫情后消费反弹&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>企业预期&lt;/td>
+ &lt;td>悲观&lt;/td>
+ &lt;td>左移&lt;/td>
+ &lt;td>2008年投资锐减&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>边际消费倾向(c1)&lt;/td>
+ &lt;td>增大&lt;/td>
+ &lt;td>斜率变缓&lt;/td>
+ &lt;td>社会保障完善国家&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;p>布兰查德的模型特别关注&lt;strong>预期&lt;/strong>在商品市场中的作用。如果消费者预期未来收入下降，即使当前税收减少也可能不会增加消费，这会削弱财政政策效果。同样，企业投资决策不仅取决于当前利率，更基于对未来销售和利润的预期。例如，2022年美联储加息初期，尽管融资成本上升，但由于企业看好后疫情复苏前景，美国投资仍保持强劲，说明预期因素可能部分抵消利率影响。&lt;/p></description></item><item><title>拓扑感知路由</title><link>https://blahvalf.github.io/docs/information/software/cloud/service-discovery/topology-aware-routing/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/service-discovery/topology-aware-routing/</guid><description/></item><item><title>现代密码学</title><link>https://blahvalf.github.io/docs/information/secure/modern_cryptography/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/secure/modern_cryptography/</guid><description>&lt;h2 id="定义">定义 &lt;a href="#%e5%ae%9a%e4%b9%89" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>现代密码学是研究如何在&lt;strong>数学理论&lt;/strong>基础上实现信息安全的学科，其核心目标包括：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>机密性&lt;/strong>（防止信息泄露）&lt;/li>
+&lt;li>&lt;strong>完整性&lt;/strong>（防止数据篡改）&lt;/li>
+&lt;li>&lt;strong>认证性&lt;/strong>（验证身份真实性）&lt;/li>
+&lt;li>&lt;strong>不可否认性&lt;/strong>（防止事后抵赖）&lt;/li>
+&lt;/ul>
+&lt;h2 id="分类与技术实现">分类与技术实现 &lt;a href="#%e5%88%86%e7%b1%bb%e4%b8%8e%e6%8a%80%e6%9c%af%e5%ae%9e%e7%8e%b0" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="一对称密码学">一、对称密码学 &lt;a href="#%e4%b8%80%e5%af%b9%e7%a7%b0%e5%af%86%e7%a0%81%e5%ad%a6" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;h4 id="1-分组密码">1. 分组密码 &lt;a href="#1-%e5%88%86%e7%bb%84%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>DES&lt;/strong>（Data Encryption Standard）&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>设计&lt;/strong>：基于Feistel结构（64位分组，56位密钥），使用S盒实现非线性变换&lt;/li>
+&lt;li>&lt;strong>缺点&lt;/strong>：密钥长度不足，易受暴力破解（已被AES取代）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>AES&lt;/strong>（Advanced Encryption Standard）&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>设计&lt;/strong>：SPN结构（128位分组，支持128/192/256位密钥），通过字节代换、行移位、列混淆和轮密钥加实现加密&lt;/li>
+&lt;li>&lt;strong>优点&lt;/strong>：抗差分/线性密码分析，硬件实现高效&lt;/li>
+&lt;li>&lt;strong>缺点&lt;/strong>：可能遭受旁路攻击（如时序分析）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h4 id="2-流密码">2. 流密码 &lt;a href="#2-%e6%b5%81%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>RC4&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>原理&lt;/strong>：通过伪随机数生成器（PRGA）产生密钥流&lt;/li>
+&lt;li>&lt;strong>缺陷&lt;/strong>：密钥调度算法存在偏差，已发现多组弱密钥&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>ChaCha20&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>优势&lt;/strong>：基于ARX结构（Add-Rotate-XOR），抗时序攻击，移动端性能优异&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="二非对称密码学">二、非对称密码学 &lt;a href="#%e4%ba%8c%e9%9d%9e%e5%af%b9%e7%a7%b0%e5%af%86%e7%a0%81%e5%ad%a6" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;h4 id="1-公钥密码">1. 公钥密码 &lt;a href="#1-%e5%85%ac%e9%92%a5%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>RSA&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>数学基础&lt;/strong>：大整数分解问题（n = p×q）&lt;/li>
+&lt;li>&lt;strong>密钥生成&lt;/strong>：选择大素数p/q，计算n和φ(n)，选取e满足gcd(e,φ(n))=1&lt;/li>
+&lt;li>&lt;strong>缺点&lt;/strong>：计算量大，密钥长度需≥2048位&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>ECC&lt;/strong>（椭圆曲线密码）&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>核心&lt;/strong>：椭圆曲线离散对数问题（ECDLP）&lt;/li>
+&lt;li>&lt;strong>优势&lt;/strong>：相同安全强度下密钥更短（256位ECC ≈ 3072位RSA）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h4 id="2-数字签名">2. 数字签名 &lt;a href="#2-%e6%95%b0%e5%ad%97%e7%ad%be%e5%90%8d" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>DSA&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>流程&lt;/strong>：基于Schnorr签名改进，使用模p域运算&lt;/li>
+&lt;li>&lt;strong>局限&lt;/strong>：签名长度固定320位，但计算效率低于ECDSA&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>ECDSA&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>优化&lt;/strong>：在椭圆曲线上实现数字签名，资源消耗减少50%&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="三哈希函数与完整性">三、哈希函数与完整性 &lt;a href="#%e4%b8%89%e5%93%88%e5%b8%8c%e5%87%bd%e6%95%b0%e4%b8%8e%e5%ae%8c%e6%95%b4%e6%80%a7" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;h4 id="1-密码学哈希">1. 密码学哈希 &lt;a href="#1-%e5%af%86%e7%a0%81%e5%ad%a6%e5%93%88%e5%b8%8c" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>SHA-256&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>结构&lt;/strong>：Merkle-Damgård结构，32位字运算&lt;/li>
+&lt;li>&lt;strong>抗性&lt;/strong>：强抗碰撞性（2^128次操作）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>SHA-3&lt;/strong>&lt;/p></description></item><item><title>Ingress</title><link>https://blahvalf.github.io/docs/information/software/cloud/service-discovery/ingress/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/service-discovery/ingress/</guid><description>&lt;p>Ingress 是从 Kubernetes 集群外部访问集群内部服务的入口，这篇文章部分译自 Kubernetes 官方文档 &lt;a href="https://kubernetes.io/docs/concepts/services-networking/ingress/" rel="external" target="_blank">Ingress Resource&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>，后面的章节会讲到使用 &lt;a href="https://github.com/containous/traefik" rel="external" target="_blank">Traefik&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 来做 Ingress controller，文章末尾给出了几个相关链接。&lt;/p></description></item><item><title>NetworkPolicy</title><link>https://blahvalf.github.io/docs/information/software/cloud/auth/networkpolicy/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/auth/networkpolicy/</guid><description>&lt;p>网络策略说明一组 &lt;code>Pod&lt;/code> 之间是如何被允许互相通信，以及如何与其它网络 Endpoint 进行通信。 &lt;code>NetworkPolicy&lt;/code> 资源使用标签来选择 &lt;code>Pod&lt;/code>，并定义了一些规则，这些规则指明允许什么流量进入到选中的 &lt;code>Pod&lt;/code> 上。关于 Network Policy 的详细用法请参考 &lt;a href="https://kubernetes.io/docs/concepts/services-networking/network-policies/" rel="external" target="_blank">Kubernetes 官网&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p>
+&lt;p>Network Policy 的作用对象是 Pod，也可以应用到 Namespace 和集群的 Ingress、Egress 流量。Network Policy 是作用在 L3/4 层的，即限制的是对 IP 地址和端口的访问，如果需要对应用层做访问限制需要使用如 &lt;a href="https://istio.io" rel="external" target="_blank">Istio&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 这类 Service Mesh。&lt;/p></description></item><item><title>Node</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/node/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/node/</guid><description>&lt;p>Node 是 Kubernetes 集群的工作节点，可以是物理机也可以是虚拟机。&lt;/p>
+&lt;h2 id="node-的状态">Node 的状态 &lt;a href="#node-%e7%9a%84%e7%8a%b6%e6%80%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Node 包括如下状态信息：&lt;/p>
+&lt;ul>
+&lt;li>Address
+&lt;ul>
+&lt;li>HostName：可以被 kubelet 中的 &lt;code>--hostname-override&lt;/code> 参数替代。&lt;/li>
+&lt;li>ExternalIP：可以被集群外部路由到的 IP 地址。&lt;/li>
+&lt;li>InternalIP：集群内部使用的 IP，集群外部无法访问。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Condition
+&lt;ul>
+&lt;li>OutOfDisk：磁盘空间不足时为 &lt;code>True&lt;/code>&lt;/li>
+&lt;li>Ready：Node controller 40 秒内没有收到 node 的状态报告为 &lt;code>Unknown&lt;/code>，健康为 &lt;code>True&lt;/code>，否则为 &lt;code>False&lt;/code>。&lt;/li>
+&lt;li>MemoryPressure：当 node 有内存压力时为 &lt;code>True&lt;/code>，否则为 &lt;code>False&lt;/code>。&lt;/li>
+&lt;li>DiskPressure：当 node 有磁盘压力时为 &lt;code>True&lt;/code>，否则为 &lt;code>False&lt;/code>。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Capacity
+&lt;ul>
+&lt;li>CPU&lt;/li>
+&lt;li>内存&lt;/li>
+&lt;li>可运行的最大 Pod 个数&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Info：节点的一些版本信息，如 OS、kubernetes、docker 等&lt;/li>
+&lt;/ul>
+&lt;h2 id="node-管理">Node 管理 &lt;a href="#node-%e7%ae%a1%e7%90%86" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>禁止 Pod 调度到该节点上。&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="de0d432" class="language-bash ">
+ &lt;code>kubectl cordon &amp;lt;node&amp;gt;&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>驱逐该节点上的所有 Pod。&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="998a85e" class="language-bash ">
+ &lt;code>kubectl drain &amp;lt;node&amp;gt;&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>该命令会删除该节点上的所有 Pod（DaemonSet 除外），在其他 node 上重新启动它们，通常该节点需要维护时使用该命令。直接使用该命令会自动调用&lt;code>kubectl cordon &amp;lt;node&amp;gt;&lt;/code>命令。当该节点维护完成，启动了 kubelet 后，再使用&lt;code>kubectl uncordon &amp;lt;node&amp;gt;&lt;/code> 即可将该节点添加到 kubernetes 集群中。&lt;/p></description></item><item><title>Volume</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/volume/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/volume/</guid><description>&lt;p>容器磁盘上的文件的生命周期是短暂的，这就使得在容器中运行重要应用时会出现一些问题。首先，当容器崩溃时，kubelet 会重启它，但是容器中的文件将丢失——容器以干净的状态（镜像最初的状态）重新启动。其次，在 &lt;code>Pod&lt;/code> 中同时运行多个容器时，这些容器之间通常需要共享文件。Kubernetes 中的 &lt;code>Volume&lt;/code> 抽象就很好的解决了这些问题。&lt;/p>
+&lt;p>建议先熟悉 &lt;a href="https://kubernetes.io/docs/user-guide/pods" rel="external" target="_blank">pod&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p>
+&lt;h2 id="背景">背景 &lt;a href="#%e8%83%8c%e6%99%af" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Docker 中也有一个 &lt;a href="https://docs.docker.com/engine/admin/volumes/" rel="external" target="_blank">volume&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 的概念，尽管它稍微宽松一些，管理也很少。在 Docker 中，卷就像是磁盘或是另一个容器中的一个目录。它的生命周期不受管理，直到最近才有了 local-disk-backed 卷。Docker 现在提供了卷驱动程序，但是功能还非常有限（例如Docker1.7只允许每个容器使用一个卷驱动，并且无法给卷传递参数）。&lt;/p></description></item><item><title>个人需求：马斯洛理论</title><link>https://blahvalf.github.io/docs/develop/demand/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/develop/demand/</guid><description>&lt;p>马斯洛需求层次理论（Maslow&amp;rsquo;s Hierarchy of Needs）由美国心理学家亚伯拉罕·马斯洛（Abraham Maslow）于1943年提出，是心理学、管理学和教育学领域的经典理论。该理论将人类需求划分为五个层次，揭示了从基本生存需求到自我实现的心理发展路径。其核心观点是：人类行为由内在需求驱动，需求的满足遵循从低级到高级的递进规律。&lt;/p>
+&lt;hr>
+&lt;h3 id="一需求层次的结构">&lt;strong>一、需求层次的结构&lt;/strong> &lt;a href="#%e4%b8%80%e9%9c%80%e6%b1%82%e5%b1%82%e6%ac%a1%e7%9a%84%e7%bb%93%e6%9e%84" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>马斯洛将需求分为五个层次，形似金字塔（后扩展为七层，但五层模型最广为人知）：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>生理需求（Physiological Needs）&lt;/strong>&lt;br>
+最底层是维持生存的基本需求，包括食物、水、空气、睡眠和性等。这些需求未满足时，人的行为会优先围绕其展开，例如饥饿时觅食是唯一目标。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>安全需求（Safety Needs）&lt;/strong>&lt;br>
+生理需求满足后，人开始追求安全与稳定，例如人身安全、健康保障、财产安全、工作稳定等。儿童对秩序的需求、成年人对储蓄的偏好均与此相关。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>归属与爱的需求（Love and Belonging Needs）&lt;/strong>&lt;br>
+社会性需求开始显现，表现为对友谊、家庭、亲密关系和社群归属的渴望。孤独感或社交排斥会引发心理问题。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>尊重需求（Esteem Needs）&lt;/strong>&lt;br>
+包括内在尊重（自信、成就感）和外在尊重（他人的认可、地位）。此阶段人希望展现能力、获得价值认同，需求未被满足可能导致自卑或无助感。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>自我实现需求（Self-Actualization）&lt;/strong>&lt;br>
+最高层次的需求，指个体追求潜能的最大化发挥，实现理想、创造价值。例如艺术家追求创作、科学家探索真理。马斯洛认为，只有少数人能够完全达到这一阶段。&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;hr>
+&lt;h3 id="二理论的核心观点">&lt;strong>二、理论的核心观点&lt;/strong> &lt;a href="#%e4%ba%8c%e7%90%86%e8%ae%ba%e7%9a%84%e6%a0%b8%e5%bf%83%e8%a7%82%e7%82%b9" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ol>
+&lt;li>&lt;strong>需求层级递进性&lt;/strong>：低级需求满足后，高级需求才会成为主导动机，但并非严格“全有或全无”。&lt;/li>
+&lt;li>&lt;strong>动态性与灵活性&lt;/strong>：需求层次可能因突发事件（如灾难、失业）而倒退，不同文化中需求优先级可能变化。&lt;/li>
+&lt;li>&lt;strong>超越性需求&lt;/strong>：后期马斯洛提出“自我超越”作为更高层次，即超越个人利益，追求宇宙意义或帮助他人成长。&lt;/li>
+&lt;/ol>
+&lt;hr>
+&lt;h3 id="三理论的应用与批评">&lt;strong>三、理论的应用与批评&lt;/strong> &lt;a href="#%e4%b8%89%e7%90%86%e8%ae%ba%e7%9a%84%e5%ba%94%e7%94%a8%e4%b8%8e%e6%89%b9%e8%af%84" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>应用领域&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>企业管理&lt;/strong>：通过满足员工安全、归属和尊重需求提升积极性。&lt;/li>
+&lt;li>&lt;strong>教育&lt;/strong>：为学生提供安全环境以激发学习动力。&lt;/li>
+&lt;li>&lt;strong>个人发展&lt;/strong>：帮助个体明确当前需求阶段，制定成长目标。&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>争议与批评&lt;/strong>：&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>文化局限性&lt;/strong>：集体主义文化中，归属需求可能优先于个人成就。&lt;/li>
+&lt;li>&lt;strong>实证支持不足&lt;/strong>：需求层次缺乏严格的科学验证，现实中人可能同时追求多层级需求。&lt;/li>
+&lt;li>&lt;strong>过度理想化&lt;/strong>：贫困、战争等极端环境下，自我实现需求难以成为普遍目标。&lt;/li>
+&lt;/ol>
+&lt;hr>
+&lt;h3 id="四现代意义">&lt;strong>四、现代意义&lt;/strong> &lt;a href="#%e5%9b%9b%e7%8e%b0%e4%bb%a3%e6%84%8f%e4%b9%89" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>尽管存在争议，马斯洛理论为理解人类动机提供了简洁框架。在当代社会，其启示在于：&lt;/p>
+&lt;ul>
+&lt;li>个人成长需兼顾物质与精神需求；&lt;/li>
+&lt;li>组织设计应关注成员的多层次需求；&lt;/li>
+&lt;li>幸福感源于需求的动态平衡，而非单一目标的实现。&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>结语&lt;/strong>&lt;br>
+马斯洛需求层次理论并非完美，但它像一盏明灯，指引我们探索人类复杂行为背后的深层动力。无论是个人追求幸福，还是社会构建和谐，这一模型都提醒我们：真正的满足，始于对“人”的全面理解。&lt;/p></description></item><item><title>密码协议</title><link>https://blahvalf.github.io/docs/information/secure/cryptographic_protocol/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/secure/cryptographic_protocol/</guid><description>&lt;h2 id="一密码协议信任传递的规则体系">一、密码协议：信任传递的规则体系 &lt;a href="#%e4%b8%80%e5%af%86%e7%a0%81%e5%8d%8f%e8%ae%ae%e4%bf%a1%e4%bb%bb%e4%bc%a0%e9%80%92%e7%9a%84%e8%a7%84%e5%88%99%e4%bd%93%e7%b3%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="11-认证协议">1.1 认证协议 &lt;a href="#11-%e8%ae%a4%e8%af%81%e5%8d%8f%e8%ae%ae" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>挑战-响应协议&lt;/strong>&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="fe9ceff" class="language-python ">
+ &lt;code># 典型挑战-响应流程
+1. 客户端发送认证请求
+2. 服务器生成随机数N（挑战）
+3. 客户端用预共享密钥加密N生成响应R=H(K||N)
+4. 服务器验证R的正确性&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>通过动态挑战值防止重放攻击，广泛应用于智能卡认证、双因素认证等场景。&lt;/p>
+&lt;p>&lt;strong>零知识证明&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>基本原理&lt;/strong>：证明者在不透露秘密信息的前提下验证声明真实性&lt;/li>
+&lt;li>&lt;strong>实用案例&lt;/strong>：ZK-SNARKs在区块链隐私交易中的应用&lt;/li>
+&lt;li>&lt;strong>实现要素&lt;/strong>：
+&lt;ul>
+&lt;li>完备性（Valid proofs verify）&lt;/li>
+&lt;li>可靠性（False statements fail）&lt;/li>
+&lt;li>零知识性（No extra信息泄露）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="12-安全通信协议">1.2 安全通信协议 &lt;a href="#12-%e5%ae%89%e5%85%a8%e9%80%9a%e4%bf%a1%e5%8d%8f%e8%ae%ae" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>TLS 1.3握手流程革新&lt;/strong>&lt;/p>
+&lt;pre class="mermaid">sequenceDiagram
+ Client-&amp;gt;&amp;gt;Server: ClientHello (支持算法列表)
+ Server-&amp;gt;&amp;gt;Client: ServerHello (选定的算法)
+ Server-&amp;gt;&amp;gt;Client: 数字证书 &amp;#43; 公钥
+ Client-&amp;gt;&amp;gt;Server: 预主密钥加密传输
+ 双方-&amp;gt;&amp;gt;安全通道: 生成会话密钥
+&lt;/pre>
+&lt;p>相比TLS 1.2的关键改进：&lt;/p>
+&lt;ul>
+&lt;li>消除不安全算法（如RSA密钥交换）&lt;/li>
+&lt;li>1-RTT快速握手&lt;/li>
+&lt;li>强制前向安全性&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>IPsec协议栈&lt;/strong>&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>协议层&lt;/th>
+ &lt;th>AH协议&lt;/th>
+ &lt;th>ESP协议&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>功能&lt;/td>
+ &lt;td>完整性验证&lt;/td>
+ &lt;td>加密+完整性&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>头部位置&lt;/td>
+ &lt;td>IP层&lt;/td>
+ &lt;td>IP层&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>保护范围&lt;/td>
+ &lt;td>完整数据包&lt;/td>
+ &lt;td>仅载荷&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;hr>
+&lt;h2 id="二密钥管理安全体系的命脉">二、密钥管理：安全体系的命脉 &lt;a href="#%e4%ba%8c%e5%af%86%e9%92%a5%e7%ae%a1%e7%90%86%e5%ae%89%e5%85%a8%e4%bd%93%e7%b3%bb%e7%9a%84%e5%91%bd%e8%84%89" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="21-pki体系架构">2.1 PKI体系架构 &lt;a href="#21-pki%e4%bd%93%e7%b3%bb%e6%9e%b6%e6%9e%84" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>X.509证书核心字段&lt;/strong>&lt;/p></description></item><item><title>数据存储类型及特点</title><link>https://blahvalf.github.io/docs/information/data/data_classification/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/data/data_classification/</guid><description>&lt;p>数据存储技术根据不同的维度可划分为多种类型，每种类型针对特定场景和需求设计。以下是数据存储的主要分类及其核心特点：&lt;/p>
+&lt;h2 id="一按存储介质分类">一、按存储介质分类 &lt;a href="#%e4%b8%80%e6%8c%89%e5%ad%98%e5%82%a8%e4%bb%8b%e8%b4%a8%e5%88%86%e7%b1%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-磁性存储">1. 磁性存储 &lt;a href="#1-%e7%a3%81%e6%80%a7%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>机械硬盘（HDD）&lt;/strong>&lt;br>
+特点：成本低、容量大，适合冷数据存储。&lt;/li>
+&lt;li>&lt;strong>磁带&lt;/strong>&lt;br>
+特点：超低成本、长期归档，但读写速度慢。&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-固态存储">2. 固态存储 &lt;a href="#2-%e5%9b%ba%e6%80%81%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>SSD&lt;/strong>&lt;br>
+特点：高性能、低延迟，适合热数据或实时处理场景。&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-光存储">3. 光存储 &lt;a href="#3-%e5%85%89%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>光盘/蓝光&lt;/strong>&lt;br>
+特点：长期保存、防篡改，适合归档（如医疗影像、法律文件）。&lt;/li>
+&lt;/ul>
+&lt;h3 id="4-内存存储">4. 内存存储 &lt;a href="#4-%e5%86%85%e5%ad%98%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>RAM/缓存（如Redis）&lt;/strong>&lt;br>
+特点：超高速读写，用于临时数据或缓存层。&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="二按数据格式和模型分类">二、按数据格式和模型分类 &lt;a href="#%e4%ba%8c%e6%8c%89%e6%95%b0%e6%8d%ae%e6%a0%bc%e5%bc%8f%e5%92%8c%e6%a8%a1%e5%9e%8b%e5%88%86%e7%b1%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-结构化数据存储">1. 结构化数据存储 &lt;a href="#1-%e7%bb%93%e6%9e%84%e5%8c%96%e6%95%b0%e6%8d%ae%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>关系型数据库（RDBMS）&lt;/strong>&lt;br>
+代表：MySQL、PostgreSQL&lt;br>
+场景：支持 ACID 事务，适合订单、用户信息等结构化数据。&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-非结构化数据存储">2. 非结构化数据存储 &lt;a href="#2-%e9%9d%9e%e7%bb%93%e6%9e%84%e5%8c%96%e6%95%b0%e6%8d%ae%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>NoSQL 数据库&lt;/strong>
+&lt;ul>
+&lt;li>&lt;strong>键值存储&lt;/strong>：Redis、DynamoDB（适合缓存或会话数据）&lt;/li>
+&lt;li>&lt;strong>文档存储&lt;/strong>：MongoDB、Couchbase（存储 JSON/XML 文档）&lt;/li>
+&lt;li>&lt;strong>列族存储&lt;/strong>：Cassandra、HBase（适合海量时序数据或日志）&lt;/li>
+&lt;li>&lt;strong>图数据库&lt;/strong>：Neo4j、Amazon Neptune（高效处理关联关系）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;strong>对象存储&lt;/strong>&lt;br>
+代表：AWS S3、MinIO&lt;br>
+场景：存储文件、图片、视频等非结构化数据。&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-半结构化数据存储">3. 半结构化数据存储 &lt;a href="#3-%e5%8d%8a%e7%bb%93%e6%9e%84%e5%8c%96%e6%95%b0%e6%8d%ae%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>搜索引擎数据库&lt;/strong>&lt;br>
+代表：Elasticsearch&lt;br>
+特点：支持全文检索和复杂分析。&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="三按使用场景分类">三、按使用场景分类 &lt;a href="#%e4%b8%89%e6%8c%89%e4%bd%bf%e7%94%a8%e5%9c%ba%e6%99%af%e5%88%86%e7%b1%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-在线事务处理oltp">1. 在线事务处理（OLTP） &lt;a href="#1-%e5%9c%a8%e7%ba%bf%e4%ba%8b%e5%8a%a1%e5%a4%84%e7%90%86oltp" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>场景&lt;/strong>：高并发、低延迟的实时事务处理（如银行交易、电商订单）。&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-在线分析处理olap">2. 在线分析处理（OLAP） &lt;a href="#2-%e5%9c%a8%e7%ba%bf%e5%88%86%e6%9e%90%e5%a4%84%e7%90%86olap" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>代表&lt;/strong>：Snowflake、Redshift&lt;/li>
+&lt;li>&lt;strong>场景&lt;/strong>：大数据分析，如数据仓库、实时数仓（ClickHouse、Druid）。&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-时序数据存储">3. 时序数据存储 &lt;a href="#3-%e6%97%b6%e5%ba%8f%e6%95%b0%e6%8d%ae%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>代表&lt;/strong>：InfluxDB、TimescaleDB&lt;/li>
+&lt;li>&lt;strong>场景&lt;/strong>：物联网、监控数据等时间序列场景。&lt;/li>
+&lt;/ul>
+&lt;h3 id="4-日志存储">4. 日志存储 &lt;a href="#4-%e6%97%a5%e5%bf%97%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>代表&lt;/strong>：Elasticsearch、Loki&lt;/li>
+&lt;li>&lt;strong>特点&lt;/strong>：支持快速检索与分析。&lt;/li>
+&lt;/ul>
+&lt;h3 id="5-地理空间数据存储">5. 地理空间数据存储 &lt;a href="#5-%e5%9c%b0%e7%90%86%e7%a9%ba%e9%97%b4%e6%95%b0%e6%8d%ae%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>代表&lt;/strong>：PostGIS（基于 PostgreSQL）&lt;/li>
+&lt;li>&lt;strong>场景&lt;/strong>：处理地图、位置数据。&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="四按架构类型分类">四、按架构类型分类 &lt;a href="#%e5%9b%9b%e6%8c%89%e6%9e%b6%e6%9e%84%e7%b1%bb%e5%9e%8b%e5%88%86%e7%b1%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-集中式存储">1. 集中式存储 &lt;a href="#1-%e9%9b%86%e4%b8%ad%e5%bc%8f%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>NAS（网络附加存储）&lt;/strong>&lt;br>
+特点：文件级共享存储（如企业文件服务器）。&lt;/li>
+&lt;li>&lt;strong>SAN（存储区域网络）&lt;/strong>&lt;br>
+特点：块级存储，高性能（如数据库存储）。&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-分布式存储">2. 分布式存储 &lt;a href="#2-%e5%88%86%e5%b8%83%e5%bc%8f%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>分布式文件系统&lt;/strong>&lt;br>
+代表：HDFS、Ceph&lt;br>
+场景：大数据场景的横向扩展。&lt;/li>
+&lt;li>&lt;strong>分布式数据库&lt;/strong>&lt;br>
+代表：CockroachDB、TiDB&lt;br>
+特点：高可用、全球部署能力。&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-云存储">3. 云存储 &lt;a href="#3-%e4%ba%91%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>对象存储&lt;/strong>：AWS S3、Azure Blob Storage（适合海量非结构化数据）&lt;/li>
+&lt;li>&lt;strong>块存储&lt;/strong>：AWS EBS（为云服务器提供持久化磁盘）&lt;/li>
+&lt;/ul>
+&lt;h3 id="4-边缘存储">4. 边缘存储 &lt;a href="#4-%e8%be%b9%e7%bc%98%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>场景&lt;/strong>：IoT 设备、CDN 边缘节点本地化存储。&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="五按数据访问频率分类">五、按数据访问频率分类 &lt;a href="#%e4%ba%94%e6%8c%89%e6%95%b0%e6%8d%ae%e8%ae%bf%e9%97%ae%e9%a2%91%e7%8e%87%e5%88%86%e7%b1%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-热存储hot-storage">1. 热存储（Hot Storage） &lt;a href="#1-%e7%83%ad%e5%ad%98%e5%82%a8hot-storage" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>特点&lt;/strong>：频繁访问，使用 SSD 或内存存储（如 Redis）。&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-温存储warm-storage">2. 温存储（Warm Storage） &lt;a href="#2-%e6%b8%a9%e5%ad%98%e5%82%a8warm-storage" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>特点&lt;/strong>：中等访问频率，成本与性能平衡（如标准云存储）。&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-冷存储cold-storage">3. 冷存储（Cold Storage） &lt;a href="#3-%e5%86%b7%e5%ad%98%e5%82%a8cold-storage" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>代表&lt;/strong>：AWS Glacier、磁带库&lt;/li>
+&lt;li>&lt;strong>特点&lt;/strong>：极少访问，低成本长期保存。&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="六其他特殊类型">六、其他特殊类型 &lt;a href="#%e5%85%ad%e5%85%b6%e4%bb%96%e7%89%b9%e6%ae%8a%e7%b1%bb%e5%9e%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-区块链存储">1. 区块链存储 &lt;a href="#1-%e5%8c%ba%e5%9d%97%e9%93%be%e5%ad%98%e5%82%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>代表&lt;/strong>：IPFS、Arweave&lt;/li>
+&lt;li>&lt;strong>特点&lt;/strong>：去中心化、不可篡改。&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-内存数据库">2. 内存数据库 &lt;a href="#2-%e5%86%85%e5%ad%98%e6%95%b0%e6%8d%ae%e5%ba%93" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>代表&lt;/strong>：SAP HANA、VoltDB&lt;/li>
+&lt;li>&lt;strong>特点&lt;/strong>：全量数据驻留内存，追求极致性能。&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-多模型数据库">3. 多模型数据库 &lt;a href="#3-%e5%a4%9a%e6%a8%a1%e5%9e%8b%e6%95%b0%e6%8d%ae%e5%ba%93" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>代表&lt;/strong>：ArangoDB&lt;/li>
+&lt;li>&lt;strong>特点&lt;/strong>：同时支持键值、文档、图等多种数据模型。&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="总结与选型建议">总结与选型建议 &lt;a href="#%e6%80%bb%e7%bb%93%e4%b8%8e%e9%80%89%e5%9e%8b%e5%bb%ba%e8%ae%ae" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>选择数据存储技术时需综合考虑以下因素：&lt;/p></description></item><item><title>金融市场基础</title><link>https://blahvalf.github.io/docs/economy/financial_market_base/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/economy/financial_market_base/</guid><description>&lt;h2 id="一金融市场的核心资产类别">一、金融市场的核心资产类别 &lt;a href="#%e4%b8%80%e9%87%91%e8%9e%8d%e5%b8%82%e5%9c%ba%e7%9a%84%e6%a0%b8%e5%bf%83%e8%b5%84%e4%ba%a7%e7%b1%bb%e5%88%ab" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-股票equities">1. 股票（Equities） &lt;a href="#1-%e8%82%a1%e7%a5%a8equities" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>定义与本质&lt;/strong>：
+股票代表公司所有权的份额，持有者（股东）对公司资产和收益拥有剩余索取权。股票市场是企业直接融资的重要渠道，也是投资者参与企业成长的主要方式。&lt;/p>
+&lt;p>&lt;strong>关键特征&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>永久性资本&lt;/strong>：无到期日，除非公司回购或私有化&lt;/li>
+&lt;li>&lt;strong>收益构成&lt;/strong>：资本增值（股价上涨）+股息收入&lt;/li>
+&lt;li>&lt;strong>投票权&lt;/strong>：普通股通常享有公司治理权（特殊类别股除外）&lt;/li>
+&lt;li>&lt;strong>有限责任&lt;/strong>：股东损失不超过投资金额&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>主要类型&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;em>普通股&lt;/em>：基本所有权形式，具有投票权和分红权&lt;/li>
+&lt;li>&lt;em>优先股&lt;/em>：固定股息优先权，通常无投票权，清算时优先受偿&lt;/li>
+&lt;li>&lt;em>存托凭证&lt;/em>（如ADR/GDR）：跨境上市的变通形式&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>估值要素&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>基本面分析：PE比率、PB比率、股息率、自由现金流&lt;/li>
+&lt;li>市场情绪：投资者预期、行业轮动、宏观经济环境&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>风险维度&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>系统性风险（市场整体波动）&lt;/li>
+&lt;li>非系统性风险（公司特定风险，可通过分散化降低）&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-债券fixed-income-securities">2. 债券（Fixed Income Securities） &lt;a href="#2-%e5%80%ba%e5%88%b8fixed-income-securities" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>定义与本质&lt;/strong>：
+债券是发行人（政府/企业）与投资者之间的债权债务契约，承诺按期支付利息并到期偿还本金。债券市场是债务融资的核心场所。&lt;/p>
+&lt;p>&lt;strong>核心要素&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>票面利率&lt;/strong>：固定或浮动利息支付率&lt;/li>
+&lt;li>&lt;strong>到期期限&lt;/strong>：短期（1年内）、中期（1-10年）、长期（10年以上）&lt;/li>
+&lt;li>&lt;strong>信用质量&lt;/strong>：由评级机构（穆迪、标普等）评估的违约风险&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>主要品种&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;em>国债&lt;/em>：国家信用背书，视为无风险利率基准&lt;/li>
+&lt;li>&lt;em>市政债券&lt;/em>：地方政府发行，常具税收优惠&lt;/li>
+&lt;li>&lt;em>公司债&lt;/em>：企业发行，收益率反映信用风险&lt;/li>
+&lt;li>&lt;em>资产证券化产品&lt;/em>：MBS、ABS等基于底层资产的结构化债券&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>定价机制&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>与市场利率反向变动：Price = ∑(C/(1+r)^t) + FV/(1+r)^n&lt;/li>
+&lt;li>收益率曲线：反映不同期限利率结构的关键指标&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>风险类型&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>利率风险（久期衡量）&lt;/li>
+&lt;li>信用风险（违约可能性）&lt;/li>
+&lt;li>流动性风险（市场深度不足）&lt;/li>
+&lt;li>再投资风险（现金流再投资收益率下降）&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-期货futures">3. 期货（Futures） &lt;a href="#3-%e6%9c%9f%e8%b4%a7futures" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>定义与本质&lt;/strong>：
+标准化合约，约定未来特定时间以确定价格买卖标的资产。期货市场最初为对冲商品价格风险而生，现已扩展到金融资产。&lt;/p>
+&lt;p>&lt;strong>核心机制&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>标准化合约&lt;/strong>：交易所统一规定合约规模、交割品质等&lt;/li>
+&lt;li>&lt;strong>保证金交易&lt;/strong>：杠杆效应（通常5-15%保证金比例）&lt;/li>
+&lt;li>&lt;strong>每日无负债结算&lt;/strong>：Mark-to-Market制度&lt;/li>
+&lt;li>&lt;strong>交割方式&lt;/strong>：实物交割或现金结算&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>主要类别&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;em>商品期货&lt;/em>：原油、黄金、农产品等&lt;/li>
+&lt;li>&lt;em>金融期货&lt;/em>：股指期货、国债期货、外汇期货&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>市场功能&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>价格发现：反映市场对未来价格的集体预期&lt;/li>
+&lt;li>风险管理：套期保值对冲现货风险&lt;/li>
+&lt;li>投机交易：利用杠杆获取价差收益&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>定价基础&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>持有成本模型：F = S × e^(r-q)T&lt;/li>
+&lt;li>基差风险：现货与期货价格之差&lt;/li>
+&lt;/ul>
+&lt;h3 id="4-期权options">4. 期权（Options） &lt;a href="#4-%e6%9c%9f%e6%9d%83options" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>定义与本质&lt;/strong>：
+赋予持有者在特定日期或之前以约定价格买卖标的资产权利的合约。期权买方支付权利金获取选择权，卖方收取权利金承担义务。&lt;/p></description></item><item><title>GatewayAPI</title><link>https://blahvalf.github.io/docs/information/software/cloud/service-discovery/gateway/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/service-discovery/gateway/</guid><description>&lt;p>除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 &lt;a href="https://github.com/kubernetes-sigs/gateway-api" rel="external" target="_blank">Gateway API 项目&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>，这是一个 CRD，可以帮助我们将 Kubernetes 中的服务暴露到集群外。&lt;/p>
+&lt;p>Gateway API 是一个由 &lt;a href="https://github.com/kubernetes/community/tree/master/sig-network" rel="external" target="_blank">SIG-NETWORK&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。Gateway API 提供了暴露 Kubernetes 应用的接口 ——Service、Ingress 等。&lt;/p></description></item><item><title>Namespace</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/namespace/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/namespace/</guid><description>&lt;p>在一个 Kubernetes 集群中可以使用 namespace 创建多个 “虚拟集群”，这些 namespace 之间可以完全隔离，也可以通过某种方式，让一个 namespace 中的 service 可以访问到其他的 namespace 中的服务，比如 Traefik ingress 和 &lt;code>kube-system&lt;/code>namespace 下的 service 就可以为整个集群提供服务，这些都需要通过 RBAC 定义集群级别的角色来实现。&lt;/p>
+&lt;h2 id="哪些情况下适合使用多个-namespace">哪些情况下适合使用多个 namespace &lt;a href="#%e5%93%aa%e4%ba%9b%e6%83%85%e5%86%b5%e4%b8%8b%e9%80%82%e5%90%88%e4%bd%bf%e7%94%a8%e5%a4%9a%e4%b8%aa-namespace" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>因为 namespace 可以提供独立的命名空间，因此可以实现部分的环境隔离。当你的项目和人员众多的时候可以考虑根据项目属性，例如生产、测试、开发划分不同的 namespace。&lt;/p>
+&lt;h2 id="namespace-使用">Namespace 使用 &lt;a href="#namespace-%e4%bd%bf%e7%94%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>**获取集群中有哪些 namespace **&lt;/p>
+&lt;p>&lt;code>kubectl get ns&lt;/code>&lt;/p>
+&lt;p>集群中默认会有 &lt;code>default&lt;/code> 和 &lt;code>kube-system&lt;/code> 这两个 namespace。&lt;/p>
+&lt;p>在执行 &lt;code>kubectl&lt;/code> 命令时可以使用 &lt;code>-n&lt;/code> 指定操作的 namespace。&lt;/p>
+&lt;p>用户的普通应用默认是在 &lt;code>default&lt;/code> 下，与集群管理相关的为整个集群提供服务的应用一般部署在 &lt;code>kube-system&lt;/code> 的 namespace 下，例如我们在安装 kubernetes 集群时部署的 &lt;code>kubedns&lt;/code>、&lt;code>heapseter&lt;/code>、&lt;code>EFK&lt;/code> 等都是在这个 namespace 下面。&lt;/p>
+&lt;p>另外，并不是所有的资源对象都会对应 namespace，&lt;code>node&lt;/code> 和 &lt;code>persistentVolume&lt;/code> 就不属于任何 namespace。&lt;/p></description></item><item><title>SPIFFE</title><link>https://blahvalf.github.io/docs/information/software/cloud/auth/spiffe/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/auth/spiffe/</guid><description>&lt;p>SPIFFE，即每个人的安全生产身份框架（Secure Production Identity Framework for Everyone），是一套开源标准，用于在动态和异构环境中安全地进行身份识别。采用 SPIFFE 的系统无论在哪里运行，都可以轻松可靠地相互认证。&lt;/p>
+&lt;p>SPIFFE 开源规范的核心是——通过简单 API 定义了一个短期的加密身份文件 SVID。然后，工作负载进行认证时可以使用该身份文件，例如建立 TLS 连接或签署和验证 JWT 令牌等。&lt;/p>
+&lt;p>SPIFFE 已经在云原生应用中得到了大量的应用，尤其是在 &lt;a href="../usecases/istio.md">Istio&lt;/a> 和 &lt;a href="../usecases/envoy.md">Envoy&lt;/a> 中。下面将向你介绍 SPIFFE 的一些基本概念。&lt;/p>
+&lt;h2 id="工作负载">工作负载 &lt;a href="#%e5%b7%a5%e4%bd%9c%e8%b4%9f%e8%bd%bd" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>工作负载是个单一的软件，以特定的配置部署，用于单一目的；它可能包括软件的多个运行实例，所有这些实例执行相同的任务。工作负载这个术语可以包含一系列不同的软件系统定义，包括：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>一个运行 Python 网络应用程序的网络服务器，在一个虚拟机集群上运行，前面有一个负载均衡器。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>一个 MySQL 数据库的实例。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>一个处理队列中项目的 worker 程序。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>独立部署的系统的集合，它们一起工作，例如一个使用数据库服务的网络应用程序。网络应用程序和数据库也可以单独被视为工作负载。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>就 SPIFFE 而言，工作负载往往比物理或虚拟节点更加细化——通常细化到节点上的单个进程。这对工作负载来说至关重要，例如，在容器编排器中托管的工作负载，几个工作负载可能在同一个节点上（但彼此隔离）。&lt;/p>
+&lt;p>就 SPIFFE 而言，一个工作负载也可能跨越许多节点。例如，一个可弹性扩展的网络服务器可能同时运行在许多机器上。&lt;/p>
+&lt;p>虽然工作负载的粒度会因环境而异，但就 SPIFFE 而言，我们&lt;strong>假设&lt;/strong>工作负载之间有足够好的隔离，这样恶意的工作负载就不能窃取他人的凭证。这种隔离的稳健性和实现的机制超出了 SPIFFE 的范围。&lt;/p>
+&lt;h2 id="spiffe-id">SPIFFE ID &lt;a href="#spiffe-id" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>SPIFFE ID 是一个字符串，可以唯一地、具体地标识一个工作负载。SPIFFE ID 也可以分配给工作负载所运行的中间系统（如一组虚拟机）。例如，&lt;code>spiffe://acme.com/billing/payments&lt;/code> 是一个有效的SPIFFE ID。&lt;/p>
+&lt;p>SPIFFE ID 是一个&lt;a href="https://tools.ietf.org/html/rfc3986" rel="external" target="_blank">统一资源标识符（URI&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>），其格式如下：&lt;code>spiffe://信任域/工作负载标识符&lt;/code>。&lt;/p></description></item><item><title>个人价值：冰山模型</title><link>https://blahvalf.github.io/docs/develop/value/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/develop/value/</guid><description>&lt;h4 id="一模型缘起与核心逻辑">一、模型缘起与核心逻辑 &lt;a href="#%e4%b8%80%e6%a8%a1%e5%9e%8b%e7%bc%98%e8%b5%b7%e4%b8%8e%e6%a0%b8%e5%bf%83%e9%80%bb%e8%be%91" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;p>冰山理论最早由弗洛伊德提出，经美国心理学家麦克利兰发展为能力素质模型。个人价值冰山模型在此基础上演化而来，将人的综合价值比作海上冰山：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>可见部分（20%）&lt;/strong>：知识储备、技能证书、行为表现等显性要素&lt;/li>
+&lt;li>&lt;strong>潜在部分（80%）&lt;/strong>：价值观、思维模式、情绪能力、内在动机等隐性特质&lt;/li>
+&lt;/ul>
+&lt;p>该模型揭示：决定个人发展上限的往往不是水面上的&amp;quot;硬实力&amp;quot;，而是深藏于意识底层的&amp;quot;软素质&amp;quot;。&lt;/p>
+&lt;h4 id="二冰山分层解析">二、冰山分层解析 &lt;a href="#%e4%ba%8c%e5%86%b0%e5%b1%b1%e5%88%86%e5%b1%82%e8%a7%a3%e6%9e%90" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>表层价值（冰山之上）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>知识体系：学历背景、专业资质&lt;/li>
+&lt;li>技能储备：语言能力、技术认证&lt;/li>
+&lt;li>行为输出：工作成果、社交表现&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>深层价值（冰山之下）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>自我认知：对自身优势/局限的清醒判断&lt;/li>
+&lt;li>价值取向：是非判断标准和人生优先级&lt;/li>
+&lt;li>思维模式：分析问题的角度与逻辑结构&lt;/li>
+&lt;li>情绪能力：压力管理、同理心、自我激励&lt;/li>
+&lt;li>底层动机：成就欲望、好奇心、利他精神&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;h4 id="三隐性特质的关键作用">三、隐性特质的关键作用 &lt;a href="#%e4%b8%89%e9%9a%90%e6%80%a7%e7%89%b9%e8%b4%a8%e7%9a%84%e5%85%b3%e9%94%ae%e4%bd%9c%e7%94%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ol>
+&lt;li>&lt;strong>决策质量&lt;/strong>：面对职业选择时，价值观决定方向取舍&lt;/li>
+&lt;li>&lt;strong>逆境突破&lt;/strong>：成长型思维帮助突破能力天花板&lt;/li>
+&lt;li>&lt;strong>关系构建&lt;/strong>：情绪智力影响团队协作效能&lt;/li>
+&lt;li>&lt;strong>持续发展&lt;/strong>：内在动机驱动终身学习&lt;/li>
+&lt;/ol>
+&lt;p>典型案例：乔布斯对完美主义的执着（隐性价值）推动苹果突破性创新，远超其编程能力（显性价值）带来的影响。&lt;/p>
+&lt;h4 id="四价值提升路径">四、价值提升路径 &lt;a href="#%e5%9b%9b%e4%bb%b7%e5%80%bc%e6%8f%90%e5%8d%87%e8%b7%af%e5%be%84" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ol>
+&lt;li>&lt;strong>显性层迭代&lt;/strong>：建立T型知识结构，保持技能更新&lt;/li>
+&lt;li>&lt;strong>隐性层修炼&lt;/strong>：
+&lt;ul>
+&lt;li>通过反思日记强化自我认知&lt;/li>
+&lt;li>用正念冥想提升情绪觉察&lt;/li>
+&lt;li>构建多元思维模型（如芒格跨学科思维）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;strong>系统整合&lt;/strong>：将内在特质转化为可展示的行为成果&lt;/li>
+&lt;/ol>
+&lt;h4 id="五应用场景">五、应用场景 &lt;a href="#%e4%ba%94%e5%ba%94%e7%94%a8%e5%9c%ba%e6%99%af" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>职业规划：匹配深层价值观的工作带来持续动力&lt;/li>
+&lt;li>人才选拔：企业更关注冰山下的文化适应性&lt;/li>
+&lt;li>教育培养：家庭教育应侧重品格塑造而非单纯知识灌输&lt;/li>
+&lt;/ul>
+&lt;h4 id="结语">结语 &lt;a href="#%e7%bb%93%e8%af%ad" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;p>个人价值冰山模型提醒我们：在人工智能替代显性技能的时代，塑造强大的底层操作系统（价值观×思维×动机）才是核心竞争力。正如管理学家彼得·德鲁克所言：&amp;ldquo;预测未来的最好方式，就是创造它。&amp;ldquo;而创造未来的密钥，正藏在每个人的冰山之下。&lt;/p></description></item><item><title>持久化卷（Persistent Volume）</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/pv/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/pv/</guid><description>&lt;p>本文档介绍了 Kubernetes 中 &lt;code>PersistentVolume&lt;/code> 的当前状态。建议您在阅读本文档前先熟悉 &lt;a href="https://kubernetes.io/docs/concepts/storage/volumes/" rel="external" target="_blank">volume&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p>
+&lt;h2 id="介绍">介绍 &lt;a href="#%e4%bb%8b%e7%bb%8d" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>对于管理计算资源来说，管理存储资源明显是另一个问题。&lt;code>PersistentVolume&lt;/code> 子系统为用户和管理员提供了一个 API，该 API 将如何提供存储的细节抽象了出来。为此，我们引入两个新的 API 资源：&lt;code>PersistentVolume&lt;/code> 和 &lt;code>PersistentVolumeClaim&lt;/code>。&lt;/p>
+&lt;p>&lt;code>PersistentVolume&lt;/code>（PV）是由管理员设置的存储，它是群集的一部分。就像节点是集群中的资源一样，PV 也是集群中的资源。 PV 是 Volume 之类的卷插件，但具有独立于使用 PV 的 Pod 的生命周期。此 API 对象包含存储实现的细节，即 NFS、iSCSI 或特定于云供应商的存储系统。&lt;/p></description></item><item><title>Label</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/label/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/label/</guid><description>&lt;p>Label 是附着到 object 上（例如 Pod）的键值对。可以在创建 object 的时候指定，也可以在 object 创建后随时指定。Labels 的值对系统本身并没有什么含义，只是对用户才有意义。&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="dc26948" class="language-json ">
+ &lt;code>&amp;#34;labels&amp;#34;: {
+ &amp;#34;key1&amp;#34; : &amp;#34;value1&amp;#34;,
+ &amp;#34;key2&amp;#34; : &amp;#34;value2&amp;#34;
+}&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>Kubernetes 最终将对 labels 最终索引和反向索引用来优化查询和 watch，在 UI 和命令行中会对它们排序。不要在 label 中使用大型、非标识的结构化数据，记录这样的数据应该用 annotation。&lt;/p>
+&lt;h2 id="动机">动机 &lt;a href="#%e5%8a%a8%e6%9c%ba" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Label 能够将组织架构映射到系统架构上（就像是康威定律），这样能够更便于微服务的管理，你可以给 object 打上如下类型的 label：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>&amp;quot;release&amp;quot; : &amp;quot;stable&amp;quot;&lt;/code>, &lt;code>&amp;quot;release&amp;quot; : &amp;quot;canary&amp;quot;&lt;/code>&lt;/li>
+&lt;li>&lt;code>&amp;quot;environment&amp;quot; : &amp;quot;dev&amp;quot;&lt;/code>, &lt;code>&amp;quot;environment&amp;quot; : &amp;quot;qa&amp;quot;&lt;/code>, &lt;code>&amp;quot;environment&amp;quot; : &amp;quot;production&amp;quot;&lt;/code>&lt;/li>
+&lt;li>&lt;code>&amp;quot;tier&amp;quot; : &amp;quot;frontend&amp;quot;&lt;/code>, &lt;code>&amp;quot;tier&amp;quot; : &amp;quot;backend&amp;quot;&lt;/code>, &lt;code>&amp;quot;tier&amp;quot; : &amp;quot;cache&amp;quot;&lt;/code>&lt;/li>
+&lt;li>&lt;code>&amp;quot;partition&amp;quot; : &amp;quot;customerA&amp;quot;&lt;/code>, &lt;code>&amp;quot;partition&amp;quot; : &amp;quot;customerB&amp;quot;&lt;/code>&lt;/li>
+&lt;li>&lt;code>&amp;quot;track&amp;quot; : &amp;quot;daily&amp;quot;&lt;/code>, &lt;code>&amp;quot;track&amp;quot; : &amp;quot;weekly&amp;quot;&lt;/code>&lt;/li>
+&lt;li>&lt;code>&amp;quot;team&amp;quot; : &amp;quot;teamA&amp;quot;&lt;/code>,&lt;code>&amp;quot;team:&amp;quot; : &amp;quot;teamB&amp;quot;&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;h2 id="语法和字符集">语法和字符集 &lt;a href="#%e8%af%ad%e6%b3%95%e5%92%8c%e5%ad%97%e7%ac%a6%e9%9b%86" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Label key 的组成：&lt;/p></description></item><item><title>StorageClass</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/storageclass/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/storageclass/</guid><description>&lt;p>本文介绍了 Kubernetes 中 &lt;code>StorageClass&lt;/code> 的概念。在阅读本文之前建议先熟悉 &lt;a href="https://kubernetes.io/docs/concepts/storage/volumes" rel="external" target="_blank">卷&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 和 &lt;a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes" rel="external" target="_blank">Persistent Volume（持久卷）&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p></description></item><item><title>Annotation</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/annotation/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/annotation/</guid><description>&lt;p>Annotation，顾名思义，就是注解。Annotation 可以将 Kubernetes 资源对象关联到任意的非标识性元数据。使用客户端（如工具和库）可以检索到这些元数据。&lt;/p>
+&lt;h2 id="关联元数据到对象">关联元数据到对象 &lt;a href="#%e5%85%b3%e8%81%94%e5%85%83%e6%95%b0%e6%8d%ae%e5%88%b0%e5%af%b9%e8%b1%a1" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Label 和 Annotation 都可以将元数据关联到 Kubernetes 资源对象。Label 主要用于选择对象，可以挑选出满足特定条件的对象。相比之下，annotation 不能用于标识及选择对象。annotation 中的元数据可多可少，可以是结构化的或非结构化的，也可以包含 label 中不允许出现的字符。&lt;/p>
+&lt;p>Annotation 和 label 一样都是 key/value 键值对映射结构：&lt;/p>
+&lt;p>&lt;code>json&amp;quot;annotations&amp;quot;: {&amp;quot;key1&amp;quot;:&amp;quot;value1&amp;quot;,&amp;quot;key2&amp;quot;:&amp;quot;value2&amp;quot;}&lt;/code>&lt;/p>
+&lt;p>以下列出了一些可以记录在 annotation 中的对象信息：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>声明配置层管理的字段。使用 annotation 关联这类字段可以用于区分以下几种配置来源：客户端或服务器设置的默认值，自动生成的字段或自动生成的 auto-scaling 和 auto-sizing 系统配置的字段。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>创建信息、版本信息或镜像信息。例如时间戳、版本号、git 分支、PR 序号、镜像哈希值以及仓库地址。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>记录日志、监控、分析或审计存储仓库的指针&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>可以用于 debug 的客户端（库或工具）信息，例如名称、版本和创建信息。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>用户信息，以及工具或系统来源信息、例如来自非 Kubernetes 生态的相关对象的 URL 信息。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>轻量级部署工具元数据，例如配置或检查点。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>负责人的电话或联系方式，或能找到相关信息的目录条目信息，例如团队网站。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>如果不使用 annotation，您也可以将以上类型的信息存放在外部数据库或目录中，但这样做不利于创建用于部署、管理、内部检查的共享工具和客户端库。&lt;/p>
+&lt;h2 id="示例">示例 &lt;a href="#%e7%a4%ba%e4%be%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>如 Istio 的 Deployment 配置中就使用到了 annotation：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="e63afa7" class="language-yaml ">
+ &lt;code>apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+ name: istio-manager
+spec:
+ replicas: 1
+ template:
+ metadata:
+ annotations:
+ alpha.istio.io/sidecar: ignore
+ labels:
+ istio: manager
+ spec:
+ serviceAccountName: istio-manager-service-account
+ containers:
+ - name: discovery
+ image: harbor-001.jimmysong.io/library/manager:0.1.5
+ imagePullPolicy: Always
+ args: [&amp;#34;discovery&amp;#34;, &amp;#34;-v&amp;#34;, &amp;#34;2&amp;#34;]
+ ports:
+ - containerPort: 8080
+ env:
+ - name: POD_NAMESPACE
+ valueFrom:
+ fieldRef:
+ apiVersion: v1
+ fieldPath: metadata.namespace
+ - name: apiserver
+ image: harbor-001.jimmysong.io/library/manager:0.1.5
+ imagePullPolicy: Always
+ args: [&amp;#34;apiserver&amp;#34;, &amp;#34;-v&amp;#34;, &amp;#34;2&amp;#34;]
+ ports:
+ - containerPort: 8081
+ env:
+ - name: POD_NAMESPACE
+ valueFrom:
+ fieldRef:
+ apiVersion: v1
+ fieldPath: metadata.namespace&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>&lt;code>alpha.istio.io/sidecar&lt;/code> 注解就是用来控制是否自动向 pod 中注入 sidecar 的。&lt;/p></description></item><item><title>本地持久化存储</title><link>https://blahvalf.github.io/docs/information/software/cloud/storage/local-persistent-storage/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/storage/local-persistent-storage/</guid><description>&lt;p>本地持久化卷允许用户通过标准 PVC 接口以简单便携的方式访问本地存储。PV 中包含系统用于将 Pod 安排到正确节点的节点亲和性信息。&lt;/p>
+&lt;p>一旦配置了本地卷，外部静态配置器（provisioner）可用于帮助简化本地存储管理。请注意，本地存储配置器与大多数配置器不同，并且尚不支持动态配置。相反，它要求管理员预先配置每个节点上的本地卷，并且这些卷应该是：&lt;/p>
+&lt;ol>
+&lt;li>Filesystem volumeMode（默认）PV—— 将它们挂载到发现目录下。&lt;/li>
+&lt;li>Block volumeMode PV——在发现目录下为节点上的块设备创建一个符号链接。&lt;/li>
+&lt;/ol>
+&lt;p>配置器将通过为每个卷创建和清除 PersistentVolumes 来管理发现目录下的卷。&lt;/p>
+&lt;h2 id="配置要求">配置要求 &lt;a href="#%e9%85%8d%e7%bd%ae%e8%a6%81%e6%b1%82" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>本地卷插件希望路径稳定，包括在重新启动时和添加或删除磁盘时。&lt;/li>
+&lt;li>静态配置器仅发现挂载点（对于文件系统模式卷）或符号链接（对于块模式卷）。对于基于目录的本地卷必须绑定到发现目录中。&lt;/li>
+&lt;/ul>
+&lt;h2 id="版本兼容性">版本兼容性 &lt;a href="#%e7%89%88%e6%9c%ac%e5%85%bc%e5%ae%b9%e6%80%a7" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>推荐配置器版本与Kubernetes版本&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Provisioner version&lt;/th>
+ &lt;th>K8s version&lt;/th>
+ &lt;th>Reason&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;a href="https://github.com/kubernetes-incubator/external-storage/tree/local-volume-provisioner-v2.1.0/local-volume" rel="external" target="_blank">2.1.0&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>&lt;/td>
+ &lt;td>1.10&lt;/td>
+ &lt;td>Beta API default, block&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;a href="https://github.com/kubernetes-incubator/external-storage/tree/local-volume-provisioner-v2.0.0/local-volume" rel="external" target="_blank">2.0.0&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>&lt;/td>
+ &lt;td>1.8, 1.9&lt;/td>
+ &lt;td>Mount propagation&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;a href="https://github.com/kubernetes-incubator/external-storage/tree/local-volume-provisioner-v1.0.1/local-volume" rel="external" target="_blank">1.0.1&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>&lt;/td>
+ &lt;td>1.7&lt;/td>
+ &lt;td>&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="k8s功能状态">K8s功能状态 &lt;a href="#k8s%e5%8a%9f%e8%83%bd%e7%8a%b6%e6%80%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>另请参阅&lt;a href="https://github.com/kubernetes-incubator/external-storage/blob/master/local-volume/KNOWN_ISSUES.md" rel="external" target="_blank">已知问题&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>和 &lt;a href="https://github.com/kubernetes-incubator/external-storage/blob/master/local-volume/CHANGELOG.md" rel="external" target="_blank">CHANGELOG&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p></description></item><item><title>资源超卖</title><link>https://blahvalf.github.io/docs/information/software/cloud/resource_oversold/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/resource_oversold/</guid><description>&lt;h1 id="背景">背景 &lt;a href="#%e8%83%8c%e6%99%af" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;h2 id="what">What &lt;a href="#what" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>资源超卖（Oversubscription）&lt;/strong> 是指在计算资源（如CPU、内存）的分配过程中，系统承诺给用户或工作负载的资源总量 &lt;strong>超过实际可用的物理资源&lt;/strong>。这一概念类似于航空公司的机票超售：飞机座位是有限的，但通过统计分析和历史数据预测，航空公司可以卖出略多于实际容量的机票，因为通常会有部分乘客改签或取消行程。&lt;/p>
+&lt;p>在Kubernetes（k8s）中，超卖通常表现为：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>资源请求（Requests）总和 &amp;lt; 节点实际资源&lt;/strong>&lt;br>
+例如：一个节点有16核CPU，但所有Pod的CPU请求总和为20核。&lt;/li>
+&lt;li>&lt;strong>资源限制（Limits）总和 &amp;raquo; 节点实际资源&lt;/strong>&lt;br>
+例如：节点内存为64GB，但所有Pod的内存限制总和达到80GB。&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>为什么能实现超卖？&lt;/strong>&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>资源使用具有波动性&lt;/strong>
+&lt;ul>
+&lt;li>大多数应用不会始终满负荷运行（如Web服务在夜间流量低谷时CPU利用率可能低于10%）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;strong>时间片复用（CPU）&lt;/strong>
+&lt;ul>
+&lt;li>CPU是时分复用资源，超卖的Pod通过分时共享物理核心。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;strong>内存超卖的投机性&lt;/strong>
+&lt;ul>
+&lt;li>依赖“并非所有Pod会同时满负荷使用内存”的假设，但风险较高（可能触发OOM Kill）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;p>&lt;strong>超卖 vs 资源过度分配（Overcommitment）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>超卖&lt;/strong> 是主动行为，目的是提高资源利用率，通常伴随监控和兜底机制。&lt;/li>
+&lt;li>&lt;strong>过度分配&lt;/strong> 可能是无意识的配置错误，容易导致系统不稳定。&lt;/li>
+&lt;/ul>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="d29c674" class="language-yaml ">
+ &lt;code># 一个超卖CPU的Pod配置示例：
+resources:
+ requests:
+ cpu: &amp;#34;0.5&amp;#34; # 调度器按此值分配
+ limits:
+ cpu: &amp;#34;2&amp;#34; # 实际可突发使用2核（如果节点有空闲）&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;h2 id="why">Why &lt;a href="#why" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>1. 提升集群资源利用率&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>现实问题&lt;/strong>：大多数Kubernetes集群的&lt;strong>平均资源利用率不足50%&lt;/strong>（尤其是CPU），大量资源因“预留”而闲置。&lt;/li>
+&lt;li>&lt;strong>超卖的作用&lt;/strong>：
+&lt;ul>
+&lt;li>允许更多Pod运行在相同节点上，充分利用资源空闲时段。&lt;/li>
+&lt;li>例如：一个16核的节点，若所有Pod的&lt;code>requests&lt;/code>总和为10核，超卖后实际运行20核的负载（利用时间片复用）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>2. 降低成本&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>云环境成本优化&lt;/strong>：减少为“峰值负载”预留的节点数量，直接降低云厂商计费（如AWS EC2实例费用）。&lt;/li>
+&lt;li>&lt;strong>裸金属服务器场景&lt;/strong>：通过超卖推迟硬件扩容，降低CAPEX（资本支出）。&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>3. 支持弹性业务需求&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>突发流量处理&lt;/strong>：互联网服务的流量具有潮汐特征（如电商大促），超卖允许Pod临时突破&lt;code>requests&lt;/code>限制，快速响应请求。&lt;/li>
+&lt;li>&lt;strong>批处理任务&lt;/strong>：AI训练、日志分析等短时高负载任务，可通过超卖“见缝插针”式调度，避免排队等待。&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>4. 开发/测试环境效率&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>低优先级负载容忍超卖&lt;/strong>：开发环境的Pod通常不需要严格SLA，超卖可让单节点运行更多测试容器，加速CI/CD流程。&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>背后的经济学原理&lt;/strong>&lt;br>
+超卖本质是&lt;strong>通过风险交换效率&lt;/strong>，其可行性依赖两个统计规律：&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>负载不重合性&lt;/strong>：不同业务的峰值时间错开（如白天在线服务、夜间批处理任务）。&lt;/li>
+&lt;li>&lt;strong>局部性原理&lt;/strong>：多数应用的实际资源使用量长期低于其&lt;code>requests&lt;/code>（如某服务声明需要4核，但实际平均使用1核）。&lt;/li>
+&lt;/ol>
+&lt;p>&lt;strong>典型案例&lt;/strong>&lt;/p></description></item><item><title>Cluster Autoscaler</title><link>https://blahvalf.github.io/docs/information/software/cloud/autoscale/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/autoscale/</guid><description>&lt;h2 id="1-什么是-cluster-autoscaler">&lt;strong>1. 什么是 Cluster Autoscaler？&lt;/strong> &lt;a href="#1-%e4%bb%80%e4%b9%88%e6%98%af-cluster-autoscaler" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>Kubernetes Cluster Autoscaler（CA）&lt;/strong> 是一个开源的 Kubernetes 组件，用于 &lt;strong>自动调整集群的节点数量&lt;/strong>，以确保 Pod 能够被高效调度，同时优化资源利用率，降低成本。&lt;/p>
+&lt;h3 id="核心功能">&lt;strong>核心功能&lt;/strong> &lt;a href="#%e6%a0%b8%e5%bf%83%e5%8a%9f%e8%83%bd" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>自动扩容&lt;/strong>：当 Pod 因资源不足无法调度时，自动增加节点。&lt;/li>
+&lt;li>&lt;strong>自动缩容&lt;/strong>：当节点利用率过低时，安全移除空闲节点。&lt;/li>
+&lt;li>&lt;strong>多云支持&lt;/strong>：兼容 AWS、GCP、Azure、阿里云、腾讯云等主流云平台。&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="2-为什么需要-cluster-autoscaler">&lt;strong>2. 为什么需要 Cluster Autoscaler？&lt;/strong> &lt;a href="#2-%e4%b8%ba%e4%bb%80%e4%b9%88%e9%9c%80%e8%a6%81-cluster-autoscaler" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>在 Kubernetes 集群中，Pod 的负载通常是动态变化的：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>突发流量&lt;/strong>：业务高峰时，需要快速扩容节点以承载更多 Pod。&lt;/li>
+&lt;li>&lt;strong>资源浪费&lt;/strong>：低峰期时，部分节点可能闲置，但仍需支付费用。&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>手动管理节点的问题&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>响应慢&lt;/strong>：人工调整节点数量无法应对突发流量。&lt;/li>
+&lt;li>&lt;strong>成本高&lt;/strong>：固定节点数量可能导致资源浪费或不足。&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>Cluster Autoscaler 的解决方案&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>自动化&lt;/strong>：根据 Pod 需求动态调整节点数量。&lt;/li>
+&lt;li>&lt;strong>成本优化&lt;/strong>：减少闲置节点，节省云资源费用。&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="3-cluster-autoscaler-的工作原理">&lt;strong>3. Cluster Autoscaler 的工作原理&lt;/strong> &lt;a href="#3-cluster-autoscaler-%e7%9a%84%e5%b7%a5%e4%bd%9c%e5%8e%9f%e7%90%86" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1触发扩容的条件">&lt;strong>（1）触发扩容的条件&lt;/strong> &lt;a href="#1%e8%a7%a6%e5%8f%91%e6%89%a9%e5%ae%b9%e7%9a%84%e6%9d%a1%e4%bb%b6" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>当 Kubernetes 调度器（Scheduler）发现 &lt;strong>Pending Pod&lt;/strong>（因资源不足无法调度的 Pod）时，Cluster Autoscaler 会检查：
+&lt;ul>
+&lt;li>是否有合适的节点池（Node Pool）可以扩容。&lt;/li>
+&lt;li>扩容后是否能满足 Pod 的资源需求（CPU、内存等）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="2触发缩容的条件">&lt;strong>（2）触发缩容的条件&lt;/strong> &lt;a href="#2%e8%a7%a6%e5%8f%91%e7%bc%a9%e5%ae%b9%e7%9a%84%e6%9d%a1%e4%bb%b6" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>当节点 &lt;strong>长时间利用率过低&lt;/strong>（默认低于 50%）时，Cluster Autoscaler 会尝试缩容：
+&lt;ul>
+&lt;li>检查节点上的 Pod 是否可以被安全迁移（如使用 &lt;code>PodDisruptionBudget&lt;/code> 保护关键应用）。&lt;/li>
+&lt;li>确保缩容不会导致其他节点过载。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="3与云厂商的交互">&lt;strong>（3）与云厂商的交互&lt;/strong> &lt;a href="#3%e4%b8%8e%e4%ba%91%e5%8e%82%e5%95%86%e7%9a%84%e4%ba%a4%e4%ba%92" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>Cluster Autoscaler 通过调用 &lt;strong>云厂商的 API&lt;/strong>（如 AWS ASG、Azure VMSS、GCP MIG）调整节点数量：&lt;/p></description></item><item><title>Taint &amp; Toleration</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/taint_toleration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/taint_toleration/</guid><description>&lt;p>Taint（污点）和 Toleration（容忍）可以作用于 node 和 pod 上，其目的是优化 pod 在集群间的调度，这跟节点亲和性类似，只不过它们作用的方式相反，具有 taint 的 node 和 pod 是互斥关系，而具有节点亲和性关系的 node 和 pod 是相吸的。另外还有可以给 node 节点设置 label，通过给 pod 设置 &lt;code>nodeSelector&lt;/code> 将 pod 调度到具有匹配标签的节点上。&lt;/p>
+&lt;p>Taint 和 toleration 相互配合，可以用来避免 pod 被分配到不合适的节点上。每个节点上都可以应用&lt;strong>一个或多个&lt;/strong> taint ，这表示对于那些不能容忍这些 taint 的 pod，是不会被该节点接受的。如果将 toleration 应用于 pod 上，则表示这些 pod 可以（但不要求）被调度到具有相应 taint 的节点上。&lt;/p>
+&lt;h2 id="示例">示例 &lt;a href="#%e7%a4%ba%e4%be%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>以下分别以为 node 设置 taint 和为 pod 设置 toleration 为例。&lt;/p>
+&lt;h2 id="为-node-设置-taint">为 node 设置 taint &lt;a href="#%e4%b8%ba-node-%e8%ae%be%e7%bd%ae-taint" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>为 node1 设置 taint：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="665ad0f" class="language-bash ">
+ &lt;code>kubectl taint nodes node1 key1=value1:NoSchedule
+kubectl taint nodes node1 key1=value1:NoExecute
+kubectl taint nodes node1 key2=value2:NoSchedule&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>删除上面的 taint：&lt;/p></description></item><item><title>垃圾回收</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/garbage-collection/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/garbage-collection/</guid><description>&lt;p>Kubernetes 垃圾收集器的角色是删除指定的对象，这些对象曾经有但以后不再拥有 Owner 了。&lt;/p>
+&lt;p>&lt;strong>注意&lt;/strong>：垃圾收集是 beta 特性，在 Kubernetes 1.4 及以上版本默认启用。&lt;/p>
+&lt;h2 id="owner-和-dependent">Owner 和 Dependent &lt;a href="#owner-%e5%92%8c-dependent" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>一些 Kubernetes 对象是其它一些的 Owner。例如，一个 ReplicaSet 是一组 Pod 的 Owner。具有 Owner 的对象被称为是 Owner 的 &lt;em>Dependent&lt;/em>。每个 Dependent 对象具有一个指向其所属对象的 &lt;code>metadata.ownerReferences&lt;/code> 字段。&lt;/p>
+&lt;p>有时，Kubernetes 会自动设置 &lt;code>ownerReference&lt;/code> 的值。例如，当创建一个 ReplicaSet 时，Kubernetes 自动设置 ReplicaSet 中每个 Pod 的 &lt;code>ownerReference&lt;/code> 字段值。在 1.6 版本，Kubernetes 会自动为一些对象设置 &lt;code>ownerReference&lt;/code> 的值，这些对象是由 ReplicationController、ReplicaSet、StatefulSet、DaemonSet 和 Deployment 所创建或管理。&lt;/p>
+&lt;p>也可以通过手动设置 &lt;code>ownerReference&lt;/code> 的值，来指定 Owner 和 Dependent 之间的关系。&lt;/p>
+&lt;p>这有一个配置文件&lt;code>my-repset.yaml&lt;/code>，表示一个具有 3 个 Pod 的 ReplicaSet：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="1af8d4d" class="language-yaml ">
+ &lt;code># k8s &amp;gt;= 1.16 使用下面注释 https://stackoverflow.com/questions/64412740/no-matches-for-kind-replicaset-in-version-extensions-v1beta1/64412990#64412990
+# apiVersion: apps/v1
+# k8s &amp;lt; 1.16 使用下面配置
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+ name: my-repset
+spec:
+ replicas: 3
+ selector:
+ matchLabels:
+ pod-is-for: garbage-collection-example
+ template:
+ metadata:
+ labels:
+ pod-is-for: garbage-collection-example
+ spec:
+ containers:
+ - name: nginx
+ image: nginx&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>如果创建该 ReplicaSet，然后查看 Pod 的 metadata 字段，能够看到 OwnerReferences 字段：&lt;/p></description></item><item><title>资源调度</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/scheduling/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/scheduling/</guid><description>&lt;p>Kubernetes 作为一个容器编排调度引擎，资源调度是它的最基本也是最重要的功能，这一节中我们将着重讲解 Kubernetes 中是如何做资源调度的。&lt;/p>
+&lt;p>Kubernetes 中有一个叫做 &lt;code>kube-scheduler&lt;/code> 的组件，该组件就是专门监听 &lt;code>kube-apiserver&lt;/code> 中是否有还未调度到 node 上的 pod，再通过特定的算法为 pod 指定分派 node 运行。&lt;/p>
+&lt;p>Kubernetes 中的众多资源类型，例如 Deployment、DaemonSet、StatefulSet 等都已经定义了 Pod 运行的一些默认调度策略，但是如果我们细心的根据 node 或者 pod 的不同属性，分别为它们打上标签之后，我们将发现 Kubernetes 中的高级调度策略是多么强大。当然如果要实现动态的资源调度，即 pod 已经调度到某些节点上后，因为一些其它原因，想要让 pod 重新调度到其它节点。&lt;/p>
+&lt;p>考虑以下两种情况：&lt;/p>
+&lt;ul>
+&lt;li>集群中有新增节点，想要让集群中的节点的资源利用率比较均衡一些，想要将一些高负载的节点上的 pod 驱逐到新增节点上，这是 kuberentes 的 scheduler 所不支持的，需要使用如 &lt;a href="https://github.com/kubernetes-sigs/descheduler" rel="external" target="_blank">descheduler&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 这样的插件来实现。&lt;/li>
+&lt;li>想要运行一些大数据应用，设计到资源分片，pod 需要与数据分布达到一致均衡，避免个别节点处理大量数据，而其它节点闲置导致整个作业延迟，这时候可以考虑使用 &lt;a href="https://github.com/kubernetes-sigs/kube-batch" rel="external" target="_blank">kube-batch&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/li>
+&lt;/ul></description></item><item><title>Qos 服务质量等级</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/qos/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/qos/</guid><description>&lt;p>QoS（Quality of Service），大部分译为“服务质量等级”，又译作“服务质量保证”，是作用在 Pod 上的一个配置，当 Kubernetes 创建一个 Pod 时，它就会给这个 Pod 分配一个 QoS 等级，可以是以下等级之一：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>Guaranteed&lt;/strong>：Pod 里的每个容器都必须有内存/CPU 限制和请求，而且值必须相等。&lt;/li>
+&lt;li>&lt;strong>Burstable&lt;/strong>：Pod 里至少有一个容器有内存或者 CPU 请求且不满足 Guarantee 等级的要求，即内存/CPU 的值设置的不同。&lt;/li>
+&lt;li>&lt;strong>BestEffort&lt;/strong>：容器必须没有任何内存或者 CPU 的限制或请求。&lt;/li>
+&lt;/ul>
+&lt;p>该配置不是通过一个配置项来配置的，而是通过配置 CPU/内存的 &lt;code>limits&lt;/code> 与 &lt;code>requests&lt;/code> 值的大小来确认服务质量等级的。使用 &lt;code>kubectl get pod -o yaml&lt;/code> 可以看到 pod 的配置输出中有 &lt;code>qosClass&lt;/code> 一项。该配置的作用是为了给资源调度提供策略支持，Kubernetes 依赖这种分类来决定当 Node 上没有足够可用资源时要驱逐哪些 Pod。&lt;/p>
+&lt;p>例如，下面这个 YAML 配置中的 Pod 资源配置部分设置的服务质量等级就是 &lt;code>Guarantee&lt;/code>。&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="508101c" class="language-yaml ">
+ &lt;code>spec:
+ containers:
+ ...
+ resources:
+ limits:
+ cpu: 100m
+ memory: 128Mi
+ requests:
+ cpu: 100m
+ memory: 128Mi&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>下面的 YAML 配置的 Pod 的服务质量等级是 &lt;code>Burstable&lt;/code>。&lt;/p></description></item><item><title>Deployment</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/deployment/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/deployment/</guid><description>&lt;p>Deployment 为 Pod 和 ReplicaSet 提供了一个声明式定义（declarative）方法，用来替代以前的 ReplicationController 来方便的管理应用。典型的应用场景包括：&lt;/p>
+&lt;ul>
+&lt;li>定义 Deployment 来创建 Pod 和 ReplicaSet&lt;/li>
+&lt;li>滚动升级和回滚应用&lt;/li>
+&lt;li>扩容和缩容&lt;/li>
+&lt;li>暂停和继续 Deployment&lt;/li>
+&lt;/ul>
+&lt;p>比如一个简单的 nginx 应用可以定义为：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="7ebceb4" class="language-yaml ">
+ &lt;code>apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+ name: nginx-deployment
+spec:
+ replicas: 3
+ template:
+ metadata:
+ labels:
+ app: nginx
+ spec:
+ containers:
+ - name: nginx
+ image: nginx:1.7.9
+ ports:
+ - containerPort: 80&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>扩容：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="76f2e8f" class="language-bash ">
+ &lt;code>kubectl scale deployment nginx-deployment --replicas 10&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>如果集群支持 horizontal pod autoscaling 的话，还可以为 Deployment 设置自动扩展：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="735b490" class="language-bash ">
+ &lt;code>kubectl autoscale deployment nginx-deployment --min=10 --max=15 --cpu-percent=80&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>更新镜像也比较简单：&lt;/p></description></item><item><title>StatefulSet</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/statefulset/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/statefulset/</guid><description>&lt;p>StatefulSet 作为 Controller 为 Pod 提供唯一的标识。它可以保证部署和 scale 的顺序。&lt;/p>
+&lt;p>使用案例参考：&lt;a href="https://github.com/kubernetes/contrib/tree/master/statefulsets" rel="external" target="_blank">kubernetes contrib - statefulsets&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>，其中包含zookeeper和kakfa的statefulset设置和使用说明。&lt;/p>
+&lt;p>StatefulSet是为了解决有状态服务的问题（对应Deployments和ReplicaSets是为无状态服务而设计），其应用场景包括：&lt;/p>
+&lt;ul>
+&lt;li>稳定的持久化存储，即Pod重新调度后还是能访问到相同的持久化数据，基于PVC来实现&lt;/li>
+&lt;li>稳定的网络标志，即Pod重新调度后其PodName和HostName不变，基于Headless Service（即没有Cluster IP的Service）来实现&lt;/li>
+&lt;li>有序部署，有序扩展，即Pod是有顺序的，在部署或者扩展的时候要依据定义的顺序依次依次进行（即从0到N-1，在下一个Pod运行之前所有之前的Pod必须都是Running和Ready状态），基于init containers来实现&lt;/li>
+&lt;li>有序收缩，有序删除（即从N-1到0）&lt;/li>
+&lt;/ul>
+&lt;p>从上面的应用场景可以发现，StatefulSet由以下几个部分组成：&lt;/p>
+&lt;ul>
+&lt;li>用于定义网络标志（DNS domain）的Headless Service&lt;/li>
+&lt;li>用于创建PersistentVolumes的volumeClaimTemplates&lt;/li>
+&lt;li>定义具体应用的StatefulSet&lt;/li>
+&lt;/ul>
+&lt;p>StatefulSet中每个Pod的DNS格式为&lt;code>statefulSetName-{0..N-1}.serviceName.namespace.svc.cluster.local&lt;/code>，其中&lt;/p></description></item><item><title>DaemonSet</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/deamonset/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/deamonset/</guid><description>&lt;p>本文将为您介绍 DaemonSet 的基本概念。&lt;/p>
+&lt;h2 id="什么是-daemonset">什么是 DaemonSet？ &lt;a href="#%e4%bb%80%e4%b9%88%e6%98%af-daemonset" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;em>DaemonSet&lt;/em> 确保全部（或者一些）Node 上运行一个 Pod 的副本。当有 Node 加入集群时，也会为他们新增一个 Pod 。当有 Node 从集群移除时，这些 Pod 也会被回收。删除 DaemonSet 将会删除它创建的所有 Pod。&lt;/p>
+&lt;p>使用 DaemonSet 的一些典型用法：&lt;/p>
+&lt;ul>
+&lt;li>运行集群存储 daemon，例如在每个 Node 上运行 &lt;code>glusterd&lt;/code>、&lt;code>ceph&lt;/code>。&lt;/li>
+&lt;li>在每个 Node 上运行日志收集 daemon，例如&lt;code>fluentd&lt;/code>、&lt;code>logstash&lt;/code>。&lt;/li>
+&lt;li>在每个 Node 上运行监控 daemon，例如 &lt;a href="https://github.com/prometheus/node_exporter" rel="external" target="_blank">Prometheus Node Exporter&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>、&lt;code>collectd&lt;/code>、Datadog 代理、New Relic 代理，或 Ganglia &lt;code>gmond&lt;/code>。&lt;/li>
+&lt;/ul>
+&lt;p>一个简单的用法是，在所有的 Node 上都存在一个 DaemonSet，将被作为每种类型的 daemon 使用。
+一个稍微复杂的用法可能是，对单独的每种类型的 daemon 使用多个 DaemonSet，但具有不同的标志，和/或对不同硬件类型具有不同的内存、CPU要求。&lt;/p></description></item><item><title>ReplicationController 和 ReplicaSet</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/replicaset/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/replicaset/</guid><description>&lt;p>ReplicationController 用来确保容器应用的副本数始终保持在用户定义的副本数，即如果有容器异常退出，会自动创建新的 Pod 来替代；而如果异常多出来的容器也会自动回收。&lt;/p>
+&lt;p>在新版本的 Kubernetes 中建议使用 ReplicaSet 来取代 ReplicationController。ReplicaSet 跟 ReplicationController 没有本质的不同，只是名字不一样，并且 ReplicaSet 支持集合式的 selector。&lt;/p>
+&lt;p>虽然 ReplicaSet 可以独立使用，但一般还是建议使用 Deployment 来自动管理 ReplicaSet，这样就无需担心跟其他机制的不兼容问题（比如 ReplicaSet 不支持 rolling-update 但 Deployment 支持）。&lt;/p>
+&lt;p>ReplicaSet 示例：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="c72f68d" class="language-yaml ">
+ &lt;code>apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+ name: frontend
+ # these labels can be applied automatically
+ # from the labels in the pod template if not set
+ # labels:
+ # app: guestbook
+ # tier: frontend
+spec:
+ # this replicas value is default
+ # modify it according to your case
+ replicas: 3
+ # selector can be applied automatically
+ # from the labels in the pod template if not set,
+ # but we are specifying the selector here to
+ # demonstrate its usage.
+ selector:
+ matchLabels:
+ tier: frontend
+ matchExpressions:
+ - {key: tier, operator: In, values: [frontend]}
+ template:
+ metadata:
+ labels:
+ app: guestbook
+ tier: frontend
+ spec:
+ containers:
+ - name: php-redis
+ image: gcr.io/google_samples/gb-frontend:v3
+ resources:
+ requests:
+ cpu: 100m
+ memory: 100Mi
+ env:
+ - name: GET_HOSTS_FROM
+ value: dns
+ # If your cluster config does not include a dns service, then to
+ # instead access environment variables to find service host
+ # info, comment out the &amp;#39;value: dns&amp;#39; line above, and uncomment the
+ # line below.
+ # value: env
+ ports:
+ - containerPort: 80&lt;/code>
+ &lt;/pre>
+ &lt;/div></description></item><item><title>Job &amp; CronJob</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/job_cronjob/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/job_cronjob/</guid><description>&lt;h1 id="job">Job &lt;a href="#job" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>Job 负责批处理任务，即仅执行一次的任务，它保证批处理任务的一个或多个 Pod 成功结束。&lt;/p>
+&lt;h2 id="job-spec-格式">Job Spec 格式 &lt;a href="#job-spec-%e6%a0%bc%e5%bc%8f" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>spec.template 格式同 Pod&lt;/li>
+&lt;li>RestartPolicy 仅支持 Never 或 OnFailure&lt;/li>
+&lt;li>单个 Pod 时，默认 Pod 成功运行后 Job 即结束&lt;/li>
+&lt;li>&lt;code>.spec.completions&lt;/code> 标志 Job 结束需要成功运行的 Pod 个数，默认为 1&lt;/li>
+&lt;li>&lt;code>.spec.parallelism&lt;/code> 标志并行运行的 Pod 的个数，默认为 1&lt;/li>
+&lt;li>&lt;code>spec.activeDeadlineSeconds&lt;/code> 标志失败 Pod 的重试最大时间，超过这个时间不会继续重试&lt;/li>
+&lt;/ul>
+&lt;p>一个简单的例子：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="bcd5969" class="language-yaml ">
+ &lt;code>apiVersion: batch/v1
+kind: Job
+metadata:
+ name: pi
+spec:
+ template:
+ metadata:
+ name: pi
+ spec:
+ containers:
+ - name: pi
+ image: perl
+ command: [&amp;#34;perl&amp;#34;, &amp;#34;-Mbignum=bpi&amp;#34;, &amp;#34;-wle&amp;#34;, &amp;#34;print bpi(2000)&amp;#34;]
+ restartPolicy: Never
+$ kubectl create -f ./job.yaml
+job &amp;#34;pi&amp;#34; created
+$ pods=$(kubectl get pods --selector=job-name=pi --output=jsonpath={.items..metadata.name})
+$ kubectl logs $pods -c pi
+3.141592653589793238462643383279502...&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;h2 id="bare-pod">Bare Pod &lt;a href="#bare-pod" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>所谓 Bare Pod 是指直接用 PodSpec 来创建的 Pod（即不在 ReplicaSet 或者 ReplicationController 的管理之下的 Pod）。这些 Pod 在 Node 重启后不会自动重启，但 Job 则会创建新的 Pod 继续任务。所以，推荐使用 Job 来替代 Bare Pod，即便是应用只需要一个 Pod。&lt;/p></description></item><item><title>Ingress</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/ingress/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/ingress/</guid><description>&lt;p>Ingress 是从 Kubernetes 集群外部访问集群内部服务的入口，这篇文章部分译自 Kubernetes 官方文档 &lt;a href="https://kubernetes.io/docs/concepts/services-networking/ingress/" rel="external" target="_blank">Ingress Resource&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>，后面的章节会讲到使用 &lt;a href="https://github.com/containous/traefik" rel="external" target="_blank">Traefik&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 来做 Ingress controller，文章末尾给出了几个相关链接。&lt;/p></description></item><item><title>自定义指标 HPA</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/custom_hpa/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/custom_hpa/</guid><description>&lt;p>Kubernetes 中不仅支持 CPU、内存为指标的 HPA，还支持自定义指标的 HPA，例如 QPS。&lt;/p>
+&lt;p>本文中使用的 YAML 文件见 &lt;a href="https://github.com/rootsongjc/kubernetes-handbook/tree/master/manifests/HPA" rel="external" target="_blank">manifests/HPA&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p>
+&lt;h2 id="设置自定义指标">设置自定义指标 &lt;a href="#%e8%ae%be%e7%bd%ae%e8%87%aa%e5%ae%9a%e4%b9%89%e6%8c%87%e6%a0%87" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>Kubernetes1.6&lt;/strong>&lt;/p>
+&lt;blockquote>
+&lt;p>在 Kubernetes1.6 集群中配置自定义指标的 HPA 的说明已废弃。&lt;/p>&lt;/blockquote>
+&lt;p>在设置定义指标 HPA 之前需要先进行如下配置：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>将 heapster 的启动参数 &lt;code>--api-server&lt;/code> 设置为 true&lt;/p></description></item><item><title>准入控制器（Admission Controller）</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/admission_controller/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/admission_controller/</guid><description>&lt;p>准入控制器（Admission Controller）位于 API Server 中，在对象被持久化之前，准入控制器拦截对 API Server 的请求，一般用来做身份验证和授权。其中包含两个特殊的控制器：&lt;code>MutatingAdmissionWebhook&lt;/code> 和 &lt;code>ValidatingAdmissionWebhook&lt;/code>。分别作为配置的变异和验证&lt;a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#admission-webhooks" rel="external" target="_blank">准入控制 webhook&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p>
+&lt;p>准入控制器包括以下两种：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>变更（Mutating）准入控制&lt;/strong>：修改请求的对象&lt;/li>
+&lt;li>&lt;strong>验证（Validating）准入控制&lt;/strong>：验证请求的对象&lt;/li>
+&lt;/ul>
+&lt;p>准入控制器是在 API Server 的启动参数重配置的。一个准入控制器可能属于以上两者中的一种，也可能两者都属于。当请求到达 API Server 的时候首先执行变更准入控制，然后再执行验证准入控制。&lt;/p>
+&lt;p>我们在部署 Kubernetes 集群的时候都会默认开启一系列准入控制器，如果没有设置这些准入控制器的话可以说你的 Kubernetes 集群就是在裸奔，应该只有集群管理员可以修改集群的准入控制器。&lt;/p></description></item><item><title>ResourceVersion &amp; Generation</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/revision_generation/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/revision_generation/</guid><description>&lt;p>最近用&lt;code>kubernetes&lt;/code> &lt;code>client-go&lt;/code>实现一个监听 &lt;code>deployments&lt;/code> 变化的功能，在如何判断 &lt;code>kubernetes&lt;/code> 资源的变化有了疑问，查阅文档得知有两个与kubernetes资源对象相关的属性。&lt;/p>
+&lt;ul>
+&lt;li>ResourceVersion&lt;/li>
+&lt;li>Generation&lt;/li>
+&lt;/ul>
+&lt;h3 id="resourceversion">ResourceVersion &lt;a href="#resourceversion" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;code>resourceVersion&lt;/code>的维护利用了底层存储&lt;code>etcd&lt;/code>的&lt;code>Revision&lt;/code>机制。&lt;/p>
+&lt;h4 id="etcd-version">Etcd Version &lt;a href="#etcd-version" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;p>ETCD共四种version&lt;/p>
+&lt;ul>
+&lt;li>Revision&lt;/li>
+&lt;li>ModRevision&lt;/li>
+&lt;li>Version&lt;/li>
+&lt;li>CreateRevision&lt;/li>
+&lt;/ul>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>字段&lt;/th>
+ &lt;th>作用范围&lt;/th>
+ &lt;th>说明&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>Version&lt;/td>
+ &lt;td>Key&lt;/td>
+ &lt;td>单个Key的修改次数，单调递增&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>Revision&lt;/td>
+ &lt;td>全局&lt;/td>
+ &lt;td>Key在集群中的全局版本号，全局唯一&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>ModRevison&lt;/td>
+ &lt;td>Key&lt;/td>
+ &lt;td>Key 最后一次修改时的 Revision&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>CreateRevision&lt;/td>
+ &lt;td>全局&lt;/td>
+ &lt;td>Key 创建时的 Revision&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;p>根据更新资源时是否带有&lt;code>resourceVersion&lt;/code>分两种情况：&lt;/p>
+&lt;ul>
+&lt;li>未带resourceVersion：无条件更新，获得etcd中最新的数据然后再此基础上更新&lt;/li>
+&lt;li>带有resourceVersion：和etcd中modRevision对比，不一样就提示版本冲突，说明数据已发生修改，当前要修改的版本已不是最新数据。&lt;/li>
+&lt;/ul>
+&lt;p>&lt;code>Kubernetes&lt;/code>资源版本控制采用乐观锁，&lt;code>apiserver&lt;/code>在写入&lt;code>etcd&lt;/code>时作冲突检测。&lt;/p>
+&lt;h3 id="generation">Generation &lt;a href="#generation" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;code>Generation&lt;/code>初始值为1，随&lt;code>Spec&lt;/code>内容的改变而自增。&lt;/p>
+&lt;p>如果&lt;code>controller&lt;/code>更新资源失败，常见的做法是，重新拉取资源，如果资源&lt;code>Generation&lt;/code>没有变化，将更新结果&lt;code>Patch&lt;/code>到新的资源上再尝试更新。&lt;/p></description></item><item><title>设计模式与七大原则</title><link>https://blahvalf.github.io/docs/information/software/serven_rules/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/serven_rules/</guid><description>&lt;h2 id="设计模式概述">设计模式概述 &lt;a href="#%e8%ae%be%e8%ae%a1%e6%a8%a1%e5%bc%8f%e6%a6%82%e8%bf%b0" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>设计模式是&lt;strong>可复用面向对象软件的设计经验总结&lt;/strong>，通过23种经典模式解决特定场景下的代码扩展性、复用性、维护性问题。其本质遵循七大核心设计原则：&lt;/p>
+&lt;hr>
+&lt;h2 id="七大设计原则详解">七大设计原则详解 &lt;a href="#%e4%b8%83%e5%a4%a7%e8%ae%be%e8%ae%a1%e5%8e%9f%e5%88%99%e8%af%a6%e8%a7%a3" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="1-单一职责原则srp">1. 单一职责原则（SRP） &lt;a href="#1-%e5%8d%95%e4%b8%80%e8%81%8c%e8%b4%a3%e5%8e%9f%e5%88%99srp" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>核心思想&lt;/strong>：一个类只负责一个功能领域中的相应职责&lt;br>
+&lt;strong>解决问题&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>避免类因承担过多职责导致的高耦合&lt;/li>
+&lt;li>减少修改代码时引发连锁错误的风险&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>示例&lt;/strong>：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="2515545" class="language-java ">
+ &lt;code>// 错误示例：用户管理类同时处理信息存储和日志记录
+class UserManager {
+ void saveUser() { /* 存储用户 */ }
+ void logActivity() { /* 记录日志 */ }
+}
+
+// 正确拆分
+class UserRepository { void saveUser() }
+class ActivityLogger { void logActivity() }&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;hr>
+&lt;h3 id="2-开闭原则ocp">2. 开闭原则（OCP） &lt;a href="#2-%e5%bc%80%e9%97%ad%e5%8e%9f%e5%88%99ocp" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>核心思想&lt;/strong>：对扩展开放，对修改关闭&lt;br>
+&lt;strong>解决问题&lt;/strong>：&lt;/p>
+&lt;ul>
+&lt;li>新功能扩展无需修改原有代码&lt;/li>
+&lt;li>提升系统稳定性与可维护性&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>示例&lt;/strong>：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="1bbff81" class="language-java ">
+ &lt;code>// 基础图形接口
+interface Shape { double area(); }
+
+// 新增图形只需扩展接口
+class Circle implements Shape { /* 实现圆面积计算 */ }
+class Square implements Shape { /* 实现正方形面积计算 */ }&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;hr>
+&lt;h3 id="3-里氏替换原则lsp">3. 里氏替换原则（LSP） &lt;a href="#3-%e9%87%8c%e6%b0%8f%e6%9b%bf%e6%8d%a2%e5%8e%9f%e5%88%99lsp" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>核心思想&lt;/strong>：子类必须能替换父类且不影响程序正确性&lt;br>
+&lt;strong>解决问题&lt;/strong>：&lt;/p></description></item><item><title>简洁架构</title><link>https://blahvalf.github.io/docs/information/software/clean_arch/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/clean_arch/</guid><description>&lt;h2 id="1-概念与核心目标">1. 概念与核心目标 &lt;a href="#1-%e6%a6%82%e5%bf%b5%e4%b8%8e%e6%a0%b8%e5%bf%83%e7%9b%ae%e6%a0%87" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>简洁架构（Clean Architecture）是一种&lt;strong>以业务逻辑为核心&lt;/strong>的软件架构设计方法论。其核心目标是：&lt;/p>
+&lt;ul>
+&lt;li>建立&lt;strong>框架无关&lt;/strong>的系统结构&lt;/li>
+&lt;li>保持业务逻辑的&lt;strong>独立性&lt;/strong>与&lt;strong>可测试性&lt;/strong>&lt;/li>
+&lt;li>实现&lt;strong>双向隔离&lt;/strong>：业务核心与技术实现的隔离、数据源与展示层的隔离&lt;/li>
+&lt;li>通过分层设计强制实施&lt;strong>依赖规则&lt;/strong>&lt;/li>
+&lt;/ul>
+&lt;h2 id="2-核心设计思想">2. 核心设计思想 &lt;a href="#2-%e6%a0%b8%e5%bf%83%e8%ae%be%e8%ae%a1%e6%80%9d%e6%83%b3" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;pre class="mermaid">graph TD
+ subgraph 框架层
+ Web[Web框架]
+ DB[(数据库)]
+ subgraph 接口适配层
+ Controllers
+ Presenters
+ subgraph 用例层
+ UseCases
+ subgraph 实体层
+ Entities
+ end
+ end
+ end
+ end
+
+ Web --&amp;gt; Controllers
+ Controllers --&amp;gt; UseCases
+ UseCases --&amp;gt; Entities
+ Presenters --&amp;gt; UseCases
+ DB -.-&amp;gt; Entities
+&lt;/pre>
+&lt;h3 id="21-分层结构同心圆模型">2.1 分层结构（同心圆模型） &lt;a href="#21-%e5%88%86%e5%b1%82%e7%bb%93%e6%9e%84%e5%90%8c%e5%bf%83%e5%9c%86%e6%a8%a1%e5%9e%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;h4 id="分层说明">分层说明： &lt;a href="#%e5%88%86%e5%b1%82%e8%af%b4%e6%98%8e" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>实体层（Entities）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>包含核心业务对象与规则&lt;/li>
+&lt;li>示例：订单实体、用户实体及其验证规则&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>用例层（Use Cases）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>实现具体业务场景的交互逻辑&lt;/li>
+&lt;li>示例：&amp;ldquo;创建订单&amp;quot;流程、&amp;ldquo;支付处理&amp;quot;流程&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>接口适配层（Interface Adapters）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>转换数据格式适配不同协议&lt;/li>
+&lt;li>包含：控制器、网关、数据映射器&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>框架层（Frameworks &amp;amp; Drivers）&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>技术实现细节：数据库、Web框架、UI组件&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;h3 id="22-依赖规则">2.2 依赖规则 &lt;a href="#22-%e4%be%9d%e8%b5%96%e8%a7%84%e5%88%99" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>向内依赖原则&lt;/strong>：外层可以依赖内层，反之禁止&lt;/li>
+&lt;li>抽象接口定义在内层，具体实现放在外层&lt;/li>
+&lt;li>数据流向：从外层到内层必须经过边界接口&lt;/li>
+&lt;/ul>
+&lt;h2 id="3-解决的关键问题">3. 解决的关键问题 &lt;a href="#3-%e8%a7%a3%e5%86%b3%e7%9a%84%e5%85%b3%e9%94%ae%e9%97%ae%e9%a2%98" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>问题类型&lt;/th>
+ &lt;th>传统架构痛点&lt;/th>
+ &lt;th>简洁架构解决方案&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>代码耦合度&lt;/td>
+ &lt;td>业务逻辑与技术实现深度耦合&lt;/td>
+ &lt;td>通过分层强制解耦&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>可维护性&lt;/td>
+ &lt;td>修改框架导致业务逻辑变动&lt;/td>
+ &lt;td>业务核心保持技术中立&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>测试复杂度&lt;/td>
+ &lt;td>需要启动完整环境才能测试&lt;/td>
+ &lt;td>核心层可脱离框架独立测试&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>技术锁定&lt;/td>
+ &lt;td>更换技术栈成本极高&lt;/td>
+ &lt;td>通过接口适配实现灵活替换&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="4-具体实现示例">4. 具体实现示例 &lt;a href="#4-%e5%85%b7%e4%bd%93%e5%ae%9e%e7%8e%b0%e7%a4%ba%e4%be%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="41-代码结构">4.1 代码结构 &lt;a href="#41-%e4%bb%a3%e7%a0%81%e7%bb%93%e6%9e%84" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="326dc47" class="language-python ">
+ &lt;code># 实体层
+class Order:
+ def __init__(self, items: list, total: float):
+ self._validate(items, total)
+ 
+ def _validate(self, items, total):
+ # 核心业务规则实现
+
+# 用例层
+class CreateOrderUseCase:
+ def __init__(self, order_repo: OrderRepository):
+ self.repo = order_repo
+ 
+ def execute(self, items):
+ order = Order(items)
+ return self.repo.save(order)
+
+# 接口适配层（实现内层定义的抽象接口）
+class SQLOrderRepository:
+ def save(self, order):
+ # 数据库具体实现
+
+# 框架层（FastAPI示例）
+@app.post(&amp;#34;/orders&amp;#34;)
+def create_order(items: list):
+ repo = SQLOrderRepository()
+ use_case = CreateOrderUseCase(repo)
+ return use_case.execute(items)&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;h3 id="42-依赖管理">4.2 依赖管理 &lt;a href="#42-%e4%be%9d%e8%b5%96%e7%ae%a1%e7%90%86" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;pre class="mermaid">graph TD
+ A[Web框架] --&amp;gt;|依赖| B[接口适配器]
+ B --&amp;gt;|实现| C[用例层接口]
+ C --&amp;gt;|依赖| D[实体层]
+&lt;/pre>
+&lt;h2 id="5-类似架构思想对比">5. 类似架构思想对比 &lt;a href="#5-%e7%b1%bb%e4%bc%bc%e6%9e%b6%e6%9e%84%e6%80%9d%e6%83%b3%e5%af%b9%e6%af%94" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>架构类型&lt;/th>
+ &lt;th>核心差异点&lt;/th>
+ &lt;th>适用场景&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>分层架构&lt;/td>
+ &lt;td>水平分层 vs 同心圆分层&lt;/td>
+ &lt;td>传统企业应用&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>六边形架构&lt;/td>
+ &lt;td>端口-适配器模式更明确&lt;/td>
+ &lt;td>高交互性系统&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>DDD&lt;/td>
+ &lt;td>强调领域建模而非结构约束&lt;/td>
+ &lt;td>复杂业务系统&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>洋葱架构&lt;/td>
+ &lt;td>类似分层但强调领域服务层&lt;/td>
+ &lt;td>长期演进的中大型系统&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="6-优势与挑战">6. 优势与挑战 &lt;a href="#6-%e4%bc%98%e5%8a%bf%e4%b8%8e%e6%8c%91%e6%88%98" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>✅ 核心优势：&lt;/p></description></item><item><title>C4 Diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/c4/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/c4/</guid><description>&lt;h1 id="c4-diagrams">C4 Diagrams &lt;a href="#c4-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>C4 Diagram: This is an experimental diagram for now. The syntax and properties can change in future releases. Proper documentation will be provided when the syntax is stable.&lt;/p>&lt;/blockquote>
+&lt;p>Mermaid&amp;rsquo;s C4 diagram syntax is compatible with plantUML. See example below:&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="5f1ac66" class="language-mermaid-example ">
+ &lt;code> C4Context
+ title System Context diagram for Internet Banking System
+ Enterprise_Boundary(b0, &amp;#34;BankBoundary0&amp;#34;) {
+ Person(customerA, &amp;#34;Banking Customer A&amp;#34;, &amp;#34;A customer of the bank, with personal bank accounts.&amp;#34;)
+ Person(customerB, &amp;#34;Banking Customer B&amp;#34;)
+ Person_Ext(customerC, &amp;#34;Banking Customer C&amp;#34;, &amp;#34;desc&amp;#34;)
+
+ Person(customerD, &amp;#34;Banking Customer D&amp;#34;, &amp;#34;A customer of the bank, &amp;lt;br/&amp;gt; with personal bank accounts.&amp;#34;)
+
+ System(SystemAA, &amp;#34;Internet Banking System&amp;#34;, &amp;#34;Allows customers to view information about their bank accounts, and make payments.&amp;#34;)
+
+ Enterprise_Boundary(b1, &amp;#34;BankBoundary&amp;#34;) {
+
+ SystemDb_Ext(SystemE, &amp;#34;Mainframe Banking System&amp;#34;, &amp;#34;Stores all of the core banking information about customers, accounts, transactions, etc.&amp;#34;)
+
+ System_Boundary(b2, &amp;#34;BankBoundary2&amp;#34;) {
+ System(SystemA, &amp;#34;Banking System A&amp;#34;)
+ System(SystemB, &amp;#34;Banking System B&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts. next line.&amp;#34;)
+ }
+
+ System_Ext(SystemC, &amp;#34;E-mail system&amp;#34;, &amp;#34;The internal Microsoft Exchange e-mail system.&amp;#34;)
+ SystemDb(SystemD, &amp;#34;Banking System D Database&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts.&amp;#34;)
+
+ Boundary(b3, &amp;#34;BankBoundary3&amp;#34;, &amp;#34;boundary&amp;#34;) {
+ SystemQueue(SystemF, &amp;#34;Banking System F Queue&amp;#34;, &amp;#34;A system of the bank.&amp;#34;)
+ SystemQueue_Ext(SystemG, &amp;#34;Banking System G Queue&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts.&amp;#34;)
+ }
+ }
+ }
+
+ BiRel(customerA, SystemAA, &amp;#34;Uses&amp;#34;)
+ BiRel(SystemAA, SystemE, &amp;#34;Uses&amp;#34;)
+ Rel(SystemAA, SystemC, &amp;#34;Sends e-mails&amp;#34;, &amp;#34;SMTP&amp;#34;)
+ Rel(SystemC, customerA, &amp;#34;Sends e-mails to&amp;#34;)
+
+ UpdateElementStyle(customerA, $fontColor=&amp;#34;red&amp;#34;, $bgColor=&amp;#34;grey&amp;#34;, $borderColor=&amp;#34;red&amp;#34;)
+ UpdateRelStyle(customerA, SystemAA, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetX=&amp;#34;5&amp;#34;)
+ UpdateRelStyle(SystemAA, SystemE, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetY=&amp;#34;-10&amp;#34;)
+ UpdateRelStyle(SystemAA, SystemC, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetY=&amp;#34;-40&amp;#34;, $offsetX=&amp;#34;-50&amp;#34;)
+ UpdateRelStyle(SystemC, customerA, $textColor=&amp;#34;red&amp;#34;, $lineColor=&amp;#34;red&amp;#34;, $offsetX=&amp;#34;-50&amp;#34;, $offsetY=&amp;#34;20&amp;#34;)
+
+ UpdateLayoutConfig($c4ShapeInRow=&amp;#34;3&amp;#34;, $c4BoundaryInRow=&amp;#34;1&amp;#34;)&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid"> C4Context
+ title System Context diagram for Internet Banking System
+ Enterprise_Boundary(b0, &amp;#34;BankBoundary0&amp;#34;) {
+ Person(customerA, &amp;#34;Banking Customer A&amp;#34;, &amp;#34;A customer of the bank, with personal bank accounts.&amp;#34;)
+ Person(customerB, &amp;#34;Banking Customer B&amp;#34;)
+ Person_Ext(customerC, &amp;#34;Banking Customer C&amp;#34;, &amp;#34;desc&amp;#34;)
+
+ Person(customerD, &amp;#34;Banking Customer D&amp;#34;, &amp;#34;A customer of the bank, &amp;lt;br/&amp;gt; with personal bank accounts.&amp;#34;)
+
+ System(SystemAA, &amp;#34;Internet Banking System&amp;#34;, &amp;#34;Allows customers to view information about their bank accounts, and make payments.&amp;#34;)
+
+ Enterprise_Boundary(b1, &amp;#34;BankBoundary&amp;#34;) {
+
+ SystemDb_Ext(SystemE, &amp;#34;Mainframe Banking System&amp;#34;, &amp;#34;Stores all of the core banking information about customers, accounts, transactions, etc.&amp;#34;)
+
+ System_Boundary(b2, &amp;#34;BankBoundary2&amp;#34;) {
+ System(SystemA, &amp;#34;Banking System A&amp;#34;)
+ System(SystemB, &amp;#34;Banking System B&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts. next line.&amp;#34;)
+ }
+
+ System_Ext(SystemC, &amp;#34;E-mail system&amp;#34;, &amp;#34;The internal Microsoft Exchange e-mail system.&amp;#34;)
+ SystemDb(SystemD, &amp;#34;Banking System D Database&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts.&amp;#34;)
+
+ Boundary(b3, &amp;#34;BankBoundary3&amp;#34;, &amp;#34;boundary&amp;#34;) {
+ SystemQueue(SystemF, &amp;#34;Banking System F Queue&amp;#34;, &amp;#34;A system of the bank.&amp;#34;)
+ SystemQueue_Ext(SystemG, &amp;#34;Banking System G Queue&amp;#34;, &amp;#34;A system of the bank, with personal bank accounts.&amp;#34;)
+ }
+ }
+ }
+
+ BiRel(customerA, SystemAA, &amp;#34;Uses&amp;#34;)
+ BiRel(SystemAA, SystemE, &amp;#34;Uses&amp;#34;)
+ Rel(SystemAA, SystemC, &amp;#34;Sends e-mails&amp;#34;, &amp;#34;SMTP&amp;#34;)
+ Rel(SystemC, customerA, &amp;#34;Sends e-mails to&amp;#34;)
+
+ UpdateElementStyle(customerA, $fontColor=&amp;#34;red&amp;#34;, $bgColor=&amp;#34;grey&amp;#34;, $borderColor=&amp;#34;red&amp;#34;)
+ UpdateRelStyle(customerA, SystemAA, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetX=&amp;#34;5&amp;#34;)
+ UpdateRelStyle(SystemAA, SystemE, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetY=&amp;#34;-10&amp;#34;)
+ UpdateRelStyle(SystemAA, SystemC, $textColor=&amp;#34;blue&amp;#34;, $lineColor=&amp;#34;blue&amp;#34;, $offsetY=&amp;#34;-40&amp;#34;, $offsetX=&amp;#34;-50&amp;#34;)
+ UpdateRelStyle(SystemC, customerA, $textColor=&amp;#34;red&amp;#34;, $lineColor=&amp;#34;red&amp;#34;, $offsetX=&amp;#34;-50&amp;#34;, $offsetY=&amp;#34;20&amp;#34;)
+
+ UpdateLayoutConfig($c4ShapeInRow=&amp;#34;3&amp;#34;, $c4BoundaryInRow=&amp;#34;1&amp;#34;)
+&lt;/pre>
+&lt;p>For an example, see the source code demos/index.html&lt;/p></description></item><item><title>Class diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/classdiagram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/classdiagram/</guid><description>&lt;h1 id="class-diagrams">Class diagrams &lt;a href="#class-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>&amp;ldquo;In software engineering, a class diagram in the Unified Modeling Language (UML) is a type of static structure diagram that describes the structure of a system by showing the system&amp;rsquo;s classes, their attributes, operations (or methods), and the relationships among objects.&amp;rdquo;&lt;/p>
+&lt;p>-Wikipedia&lt;/p>&lt;/blockquote>
+&lt;p>The class diagram is the main building block of object-oriented modeling. It is used for general conceptual modeling of the structure of the application, and for detailed modeling to translate the models into programming code. Class diagrams can also be used for data modeling. The classes in a class diagram represent both the main elements, interactions in the application, and the classes to be programmed.&lt;/p></description></item><item><title>Entity Relationship Diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/entityrelationshipdiagram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/entityrelationshipdiagram/</guid><description>&lt;h1 id="entity-relationship-diagrams">Entity Relationship Diagrams &lt;a href="#entity-relationship-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>An entity–relationship model (or ER model) describes interrelated things of interest in a specific domain of knowledge. A basic ER model is composed of entity types (which classify the things of interest) and specifies relationships that can exist between entities (instances of those entity types). Wikipedia.&lt;/p>&lt;/blockquote>
+&lt;p>Note that practitioners of ER modelling almost always refer to &lt;em>entity types&lt;/em> simply as &lt;em>entities&lt;/em>. For example the &lt;code>CUSTOMER&lt;/code> entity &lt;em>type&lt;/em> would be referred to simply as the &lt;code>CUSTOMER&lt;/code> entity. This is so common it would be inadvisable to do anything else, but technically an entity is an abstract &lt;em>instance&lt;/em> of an entity type, and this is what an ER diagram shows - abstract instances, and the relationships between them. This is why entities are always named using singular nouns.&lt;/p></description></item><item><title>Examples</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/examples/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/examples/</guid><description>&lt;h1 id="examples">Examples &lt;a href="#examples" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>This page contains a collection of examples of diagrams and charts that can be created through mermaid and its myriad applications.&lt;/p>
+&lt;p>&lt;strong>If you wish to learn how to support mermaid on your webpage, read the &lt;a href="../config/usage.md?id=usage">Beginner&amp;rsquo;s Guide&lt;/a>.&lt;/strong>&lt;/p>
+&lt;p>&lt;strong>If you wish to learn about mermaid&amp;rsquo;s syntax, Read the &lt;a data-bs-delay="{&amp;#34;hide&amp;#34;:300,&amp;#34;show&amp;#34;:550}" data-bs-html="true" data-bs-title="&lt;a href='https://blahvalf.github.io/docs/mix/mermaid/syntax/flowchart/'>&lt;p>MERMAID@V10.6.1 SYNTAX&lt;/p>&lt;strong>Flowcharts - Basic Syntax&lt;/strong>&lt;br>&lt;/a>" data-bs-toggle="tooltip" href="https://blahvalf.github.io/docs/mix/mermaid/syntax/flowchart/?id=flowcharts-basic-syntax">Diagram Syntax&lt;/a> section.&lt;/strong>&lt;/p>
+&lt;h2 id="basic-pie-chart">Basic Pie Chart &lt;a href="#basic-pie-chart" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="f8b253f" class="language-mermaid-example ">
+ &lt;code>pie title NETFLIX
+ &amp;#34;Time spent looking for movie&amp;#34; : 90
+ &amp;#34;Time spent watching it&amp;#34; : 10&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">pie title NETFLIX
+ &amp;#34;Time spent looking for movie&amp;#34; : 90
+ &amp;#34;Time spent watching it&amp;#34; : 10
+&lt;/pre>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="cd5f60d" class="language-mermaid-example ">
+ &lt;code>pie title What Voldemort doesn&amp;#39;t have?
+ &amp;#34;FRIENDS&amp;#34; : 2
+ &amp;#34;FAMILY&amp;#34; : 3
+ &amp;#34;NOSE&amp;#34; : 45&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">pie title What Voldemort doesn&amp;#39;t have?
+ &amp;#34;FRIENDS&amp;#34; : 2
+ &amp;#34;FAMILY&amp;#34; : 3
+ &amp;#34;NOSE&amp;#34; : 45
+&lt;/pre>
+&lt;h2 id="basic-sequence-diagram">Basic sequence diagram &lt;a href="#basic-sequence-diagram" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="2ddbfd1" class="language-mermaid-example ">
+ &lt;code>sequenceDiagram
+ Alice -&amp;gt;&amp;gt; Bob: Hello Bob, how are you?
+ Bob--&amp;gt;&amp;gt;John: How about you John?
+ Bob--x Alice: I am good thanks!
+ Bob-x John: I am good thanks!
+ Note right of John: Bob thinks a long&amp;lt;br/&amp;gt;long time, so long&amp;lt;br/&amp;gt;that the text does&amp;lt;br/&amp;gt;not fit on a row.
+
+ Bob--&amp;gt;Alice: Checking with John...
+ Alice-&amp;gt;John: Yes... John, how are you?&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">sequenceDiagram
+ Alice -&amp;gt;&amp;gt; Bob: Hello Bob, how are you?
+ Bob--&amp;gt;&amp;gt;John: How about you John?
+ Bob--x Alice: I am good thanks!
+ Bob-x John: I am good thanks!
+ Note right of John: Bob thinks a long&amp;lt;br/&amp;gt;long time, so long&amp;lt;br/&amp;gt;that the text does&amp;lt;br/&amp;gt;not fit on a row.
+
+ Bob--&amp;gt;Alice: Checking with John...
+ Alice-&amp;gt;John: Yes... John, how are you?
+&lt;/pre>
+&lt;h2 id="basic-flowchart">Basic flowchart &lt;a href="#basic-flowchart" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="e592583" class="language-mermaid-example ">
+ &lt;code>graph LR
+ A[Square Rect] -- Link text --&amp;gt; B((Circle))
+ A --&amp;gt; C(Round Rect)
+ B --&amp;gt; D{Rhombus}
+ C --&amp;gt; D&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">graph LR
+ A[Square Rect] -- Link text --&amp;gt; B((Circle))
+ A --&amp;gt; C(Round Rect)
+ B --&amp;gt; D{Rhombus}
+ C --&amp;gt; D
+&lt;/pre>
+&lt;h2 id="larger-flowchart-with-some-styling">Larger flowchart with some styling &lt;a href="#larger-flowchart-with-some-styling" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="d4f2484" class="language-mermaid-example ">
+ &lt;code>graph TB
+ sq[Square shape] --&amp;gt; ci((Circle shape))
+
+ subgraph A
+ od&amp;gt;Odd shape]-- Two line&amp;lt;br/&amp;gt;edge comment --&amp;gt; ro
+ di{Diamond with &amp;lt;br/&amp;gt; line break} -.-&amp;gt; ro(Rounded&amp;lt;br&amp;gt;square&amp;lt;br&amp;gt;shape)
+ di==&amp;gt;ro2(Rounded square shape)
+ end
+
+ %% Notice that no text in shape are added here instead that is appended further down
+ e --&amp;gt; od3&amp;gt;Really long text with linebreak&amp;lt;br&amp;gt;in an Odd shape]
+
+ %% Comments after double percent signs
+ e((Inner / circle&amp;lt;br&amp;gt;and some odd &amp;lt;br&amp;gt;special characters)) --&amp;gt; f(,.?!&amp;#43;-*ز)
+
+ cyr[Cyrillic]--&amp;gt;cyr2((Circle shape Начало));
+
+ classDef green fill:#9f6,stroke:#333,stroke-width:2px;
+ classDef orange fill:#f96,stroke:#333,stroke-width:4px;
+ class sq,e green
+ class di orange&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">graph TB
+ sq[Square shape] --&amp;gt; ci((Circle shape))
+
+ subgraph A
+ od&amp;gt;Odd shape]-- Two line&amp;lt;br/&amp;gt;edge comment --&amp;gt; ro
+ di{Diamond with &amp;lt;br/&amp;gt; line break} -.-&amp;gt; ro(Rounded&amp;lt;br&amp;gt;square&amp;lt;br&amp;gt;shape)
+ di==&amp;gt;ro2(Rounded square shape)
+ end
+
+ %% Notice that no text in shape are added here instead that is appended further down
+ e --&amp;gt; od3&amp;gt;Really long text with linebreak&amp;lt;br&amp;gt;in an Odd shape]
+
+ %% Comments after double percent signs
+ e((Inner / circle&amp;lt;br&amp;gt;and some odd &amp;lt;br&amp;gt;special characters)) --&amp;gt; f(,.?!&amp;#43;-*ز)
+
+ cyr[Cyrillic]--&amp;gt;cyr2((Circle shape Начало));
+
+ classDef green fill:#9f6,stroke:#333,stroke-width:2px;
+ classDef orange fill:#f96,stroke:#333,stroke-width:4px;
+ class sq,e green
+ class di orange
+&lt;/pre>
+&lt;h2 id="sequencediagram-loops-alt-and-opt">SequenceDiagram: Loops, alt and opt &lt;a href="#sequencediagram-loops-alt-and-opt" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="df6ff2c" class="language-mermaid-example ">
+ &lt;code>sequenceDiagram
+ loop Daily query
+ Alice-&amp;gt;&amp;gt;Bob: Hello Bob, how are you?
+ alt is sick
+ Bob-&amp;gt;&amp;gt;Alice: Not so good :(
+ else is well
+ Bob-&amp;gt;&amp;gt;Alice: Feeling fresh like a daisy
+ end
+
+ opt Extra response
+ Bob-&amp;gt;&amp;gt;Alice: Thanks for asking
+ end
+ end&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">sequenceDiagram
+ loop Daily query
+ Alice-&amp;gt;&amp;gt;Bob: Hello Bob, how are you?
+ alt is sick
+ Bob-&amp;gt;&amp;gt;Alice: Not so good :(
+ else is well
+ Bob-&amp;gt;&amp;gt;Alice: Feeling fresh like a daisy
+ end
+
+ opt Extra response
+ Bob-&amp;gt;&amp;gt;Alice: Thanks for asking
+ end
+ end
+&lt;/pre>
+&lt;h2 id="sequencediagram-message-to-self-in-loop">SequenceDiagram: Message to self in loop &lt;a href="#sequencediagram-message-to-self-in-loop" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="209efa0" class="language-mermaid-example ">
+ &lt;code>sequenceDiagram
+ participant Alice
+ participant Bob
+ Alice-&amp;gt;&amp;gt;John: Hello John, how are you?
+ loop Healthcheck
+ John-&amp;gt;&amp;gt;John: Fight against hypochondria
+ end
+ Note right of John: Rational thoughts&amp;lt;br/&amp;gt;prevail...
+ John--&amp;gt;&amp;gt;Alice: Great!
+ John-&amp;gt;&amp;gt;Bob: How about you?
+ Bob--&amp;gt;&amp;gt;John: Jolly good!&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">sequenceDiagram
+ participant Alice
+ participant Bob
+ Alice-&amp;gt;&amp;gt;John: Hello John, how are you?
+ loop Healthcheck
+ John-&amp;gt;&amp;gt;John: Fight against hypochondria
+ end
+ Note right of John: Rational thoughts&amp;lt;br/&amp;gt;prevail...
+ John--&amp;gt;&amp;gt;Alice: Great!
+ John-&amp;gt;&amp;gt;Bob: How about you?
+ Bob--&amp;gt;&amp;gt;John: Jolly good!
+&lt;/pre>
+&lt;h2 id="sequence-diagram-blogging-app-service-communication">Sequence Diagram: Blogging app service communication &lt;a href="#sequence-diagram-blogging-app-service-communication" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="6967eec" class="language-mermaid-example ">
+ &lt;code>sequenceDiagram
+ participant web as Web Browser
+ participant blog as Blog Service
+ participant account as Account Service
+ participant mail as Mail Service
+ participant db as Storage
+
+ Note over web,db: The user must be logged in to submit blog posts
+ web-&amp;gt;&amp;gt;&amp;#43;account: Logs in using credentials
+ account-&amp;gt;&amp;gt;db: Query stored accounts
+ db-&amp;gt;&amp;gt;account: Respond with query result
+
+ alt Credentials not found
+ account-&amp;gt;&amp;gt;web: Invalid credentials
+ else Credentials found
+ account-&amp;gt;&amp;gt;-web: Successfully logged in
+
+ Note over web,db: When the user is authenticated, they can now submit new posts
+ web-&amp;gt;&amp;gt;&amp;#43;blog: Submit new post
+ blog-&amp;gt;&amp;gt;db: Store post data
+
+ par Notifications
+ blog--)mail: Send mail to blog subscribers
+ blog--)db: Store in-site notifications
+ and Response
+ blog--&amp;gt;&amp;gt;-web: Successfully posted
+ end
+ end&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">sequenceDiagram
+ participant web as Web Browser
+ participant blog as Blog Service
+ participant account as Account Service
+ participant mail as Mail Service
+ participant db as Storage
+
+ Note over web,db: The user must be logged in to submit blog posts
+ web-&amp;gt;&amp;gt;&amp;#43;account: Logs in using credentials
+ account-&amp;gt;&amp;gt;db: Query stored accounts
+ db-&amp;gt;&amp;gt;account: Respond with query result
+
+ alt Credentials not found
+ account-&amp;gt;&amp;gt;web: Invalid credentials
+ else Credentials found
+ account-&amp;gt;&amp;gt;-web: Successfully logged in
+
+ Note over web,db: When the user is authenticated, they can now submit new posts
+ web-&amp;gt;&amp;gt;&amp;#43;blog: Submit new post
+ blog-&amp;gt;&amp;gt;db: Store post data
+
+ par Notifications
+ blog--)mail: Send mail to blog subscribers
+ blog--)db: Store in-site notifications
+ and Response
+ blog--&amp;gt;&amp;gt;-web: Successfully posted
+ end
+ end
+&lt;/pre>
+&lt;h2 id="a-commit-flow-diagram">A commit flow diagram. &lt;a href="#a-commit-flow-diagram" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="fdae4d6" class="language-mermaid-example ">
+ &lt;code>gitGraph:
+ commit &amp;#34;Ashish&amp;#34;
+ branch newbranch
+ checkout newbranch
+ commit id:&amp;#34;1111&amp;#34;
+ commit tag:&amp;#34;test&amp;#34;
+ checkout main
+ commit type: HIGHLIGHT
+ commit
+ merge newbranch
+ commit
+ branch b2
+ commit&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">gitGraph:
+ commit &amp;#34;Ashish&amp;#34;
+ branch newbranch
+ checkout newbranch
+ commit id:&amp;#34;1111&amp;#34;
+ commit tag:&amp;#34;test&amp;#34;
+ checkout main
+ commit type: HIGHLIGHT
+ commit
+ merge newbranch
+ commit
+ branch b2
+ commit
+&lt;/pre></description></item><item><title>Flowcharts - Basic Syntax</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/flowchart/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/flowchart/</guid><description>&lt;h1 id="flowcharts---basic-syntax">Flowcharts - Basic Syntax &lt;a href="#flowcharts---basic-syntax" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>Flowcharts are composed of &lt;strong>nodes&lt;/strong> (geometric shapes) and &lt;strong>edges&lt;/strong> (arrows or lines). The Mermaid code defines how nodes and edges are made and accommodates different arrow types, multi-directional arrows, and any linking to and from subgraphs.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>Warning&lt;/strong>
+If you are using the word &amp;ldquo;end&amp;rdquo; in a Flowchart node, capitalize the entire word or any of the letters (e.g., &amp;ldquo;End&amp;rdquo; or &amp;ldquo;END&amp;rdquo;), or apply this &lt;a href="https://github.com/mermaid-js/mermaid/issues/1444#issuecomment-639528897" rel="external" target="_blank">workaround&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>. Typing &amp;ldquo;end&amp;rdquo; in all lowercase letters will break the Flowchart.&lt;/p></description></item><item><title>Gantt diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/gantt/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/gantt/</guid><description>&lt;h1 id="gantt-diagrams">Gantt diagrams &lt;a href="#gantt-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A Gantt chart is a type of bar chart, first developed by Karol Adamiecki in 1896, and independently by Henry Gantt in the 1910s, that illustrates a project schedule and the amount of time it would take for any one project to finish. Gantt charts illustrate number of days between the start and finish dates of the terminal elements and summary elements of a project.&lt;/p>&lt;/blockquote>
+&lt;h2 id="a-note-to-users">A note to users &lt;a href="#a-note-to-users" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Gantt Charts will record each scheduled task as one continuous bar that extends from the left to the right. The x axis represents time and the y records the different tasks and the order in which they are to be completed.&lt;/p></description></item><item><title>Gitgraph Diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/gitgraph/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/gitgraph/</guid><description>&lt;h1 id="gitgraph-diagrams">Gitgraph Diagrams &lt;a href="#gitgraph-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A Git Graph is a pictorial representation of git commits and git actions(commands) on various branches.&lt;/p>&lt;/blockquote>
+&lt;p>These kind of diagram are particularly helpful to developers and devops teams to share their Git branching strategies. For example, it makes it easier to visualize how git flow works.&lt;/p>
+&lt;p>Mermaid can render Git diagrams&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="4aa8f13" class="language-mermaid-example ">
+ &lt;code>---
+title: Example Git diagram
+---
+gitGraph
+ commit
+ commit
+ branch develop
+ checkout develop
+ commit
+ commit
+ checkout main
+ merge develop
+ commit
+ commit&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">---
+title: Example Git diagram
+---
+gitGraph
+ commit
+ commit
+ branch develop
+ checkout develop
+ commit
+ commit
+ checkout main
+ merge develop
+ commit
+ commit
+&lt;/pre>
+&lt;p>In Mermaid, we support the basic git operations like:&lt;/p></description></item><item><title>Mindmap</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/mindmap/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/mindmap/</guid><description>&lt;h1 id="mindmap">Mindmap &lt;a href="#mindmap" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>Mindmap: This is an experimental diagram for now. The syntax and properties can change in future releases. The syntax is stable except for the icon integration which is the experimental part.&lt;/p>&lt;/blockquote>
+&lt;p>&amp;ldquo;A mind map is a diagram used to visually organize information into a hierarchy, showing relationships among pieces of the whole. It is often created around a single concept, drawn as an image in the center of a blank page, to which associated representations of ideas such as images, words and parts of words are added. Major ideas are connected directly to the central concept, and other ideas branch out from those major ideas.&amp;rdquo; Wikipedia&lt;/p></description></item><item><title>Pie chart diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/pie/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/pie/</guid><description>&lt;h1 id="pie-chart-diagrams">Pie chart diagrams &lt;a href="#pie-chart-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A pie chart (or a circle chart) is a circular statistical graphic, which is divided into slices to illustrate numerical proportion. In a pie chart, the arc length of each slice (and consequently its central angle and area), is proportional to the quantity it represents. While it is named for its resemblance to a pie which has been sliced, there are variations on the way it can be presented. The earliest known pie chart is generally credited to William Playfair&amp;rsquo;s Statistical Breviary of 1801
+-Wikipedia&lt;/p></description></item><item><title>Quadrant Chart</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/quadrantchart/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/quadrantchart/</guid><description>&lt;h1 id="quadrant-chart">Quadrant Chart &lt;a href="#quadrant-chart" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A quadrant chart is a visual representation of data that is divided into four quadrants. It is used to plot data points on a two-dimensional grid, with one variable represented on the x-axis and another variable represented on the y-axis. The quadrants are determined by dividing the chart into four equal parts based on a set of criteria that is specific to the data being analyzed. Quadrant charts are often used to identify patterns and trends in data, and to prioritize actions based on the position of data points within the chart. They are commonly used in business, marketing, and risk management, among other fields.&lt;/p></description></item><item><title>Requirement Diagram</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/requirementdiagram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/requirementdiagram/</guid><description>&lt;h1 id="requirement-diagram">Requirement Diagram &lt;a href="#requirement-diagram" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A Requirement diagram provides a visualization for requirements and their connections, to each other and other documented elements. The modeling specs follow those defined by SysML v1.6.&lt;/p>&lt;/blockquote>
+&lt;p>Rendering requirements is straightforward.&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="097e04f" class="language-mermaid-example ">
+ &lt;code> requirementDiagram
+
+ requirement test_req {
+ id: 1
+ text: the test text.
+ risk: high
+ verifymethod: test
+ }
+
+ element test_entity {
+ type: simulation
+ }
+
+ test_entity - satisfies -&amp;gt; test_req&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid"> requirementDiagram
+
+ requirement test_req {
+ id: 1
+ text: the test text.
+ risk: high
+ verifymethod: test
+ }
+
+ element test_entity {
+ type: simulation
+ }
+
+ test_entity - satisfies -&amp;gt; test_req
+&lt;/pre>
+&lt;h2 id="syntax">Syntax &lt;a href="#syntax" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>There are three types of components to a requirement diagram: requirement, element, and relationship.&lt;/p></description></item><item><title>Sankey diagram (v10.3.0+)</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/sankey/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/sankey/</guid><description>&lt;h1 id="sankey-diagram-v1030">Sankey diagram (v10.3.0+) &lt;a href="#sankey-diagram-v1030" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A sankey diagram is a visualization used to depict a flow from one set of values to another.&lt;/p>&lt;/blockquote>
+&lt;blockquote>
+&lt;p>&lt;strong>Warning&lt;/strong>
+This is an experimental diagram. Its syntax are very close to plain CSV, but it is to be extended in the nearest future.&lt;/p>&lt;/blockquote>
+&lt;p>The things being connected are called nodes and the connections are called links.&lt;/p>
+&lt;h2 id="example">Example &lt;a href="#example" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>This example taken from &lt;a href="https://observablehq.com/@d3/sankey/2?collection=@d3/d3-sankey" rel="external" target="_blank">observable&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>. It may be rendered a little bit differently, though, in terms of size and colors.&lt;/p></description></item><item><title>Sequence diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/sequencediagram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/sequencediagram/</guid><description>&lt;h1 id="sequence-diagrams">Sequence diagrams &lt;a href="#sequence-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>A Sequence diagram is an interaction diagram that shows how processes operate with one another and in what order.&lt;/p>&lt;/blockquote>
+&lt;p>Mermaid can render sequence diagrams.&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="171ed4e" class="language-mermaid-example ">
+ &lt;code>sequenceDiagram
+ Alice-&amp;gt;&amp;gt;John: Hello John, how are you?
+ John--&amp;gt;&amp;gt;Alice: Great!
+ Alice-)John: See you later!&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">sequenceDiagram
+ Alice-&amp;gt;&amp;gt;John: Hello John, how are you?
+ John--&amp;gt;&amp;gt;Alice: Great!
+ Alice-)John: See you later!
+&lt;/pre>
+&lt;blockquote>
+&lt;p>&lt;strong>Note&lt;/strong>
+A note on nodes, the word &amp;ldquo;end&amp;rdquo; could potentially break the diagram, due to the way that the mermaid language is scripted.&lt;/p></description></item><item><title>State diagrams</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/statediagram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/statediagram/</guid><description>&lt;h1 id="state-diagrams">State diagrams &lt;a href="#state-diagrams" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>&amp;ldquo;A state diagram is a type of diagram used in computer science and related fields to describe the behavior of systems.
+State diagrams require that the system described is composed of a finite number of states; sometimes, this is indeed the
+case, while at other times this is a reasonable abstraction.&amp;rdquo; Wikipedia&lt;/p>&lt;/blockquote>
+&lt;p>Mermaid can render state diagrams. The syntax tries to be compliant with the syntax used in plantUml as this will make
+it easier for users to share diagrams between mermaid and plantUml.&lt;/p></description></item><item><title>Timeline Diagram</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/timeline/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/timeline/</guid><description>&lt;h1 id="timeline-diagram">Timeline Diagram &lt;a href="#timeline-diagram" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>Timeline: This is an experimental diagram for now. The syntax and properties can change in future releases. The syntax is stable except for the icon integration which is the experimental part.&lt;/p>&lt;/blockquote>
+&lt;p>&amp;ldquo;A timeline is a type of diagram used to illustrate a chronology of events, dates, or periods of time. It is usually presented graphically to indicate the passing of time, and it is usually organized chronologically. A basic timeline presents a list of events in chronological order, usually using dates as markers. A timeline can also be used to show the relationship between events, such as the relationship between the events of a person&amp;rsquo;s life.&amp;rdquo; Wikipedia&lt;/p></description></item><item><title>User Journey Diagram</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/userjourney/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/userjourney/</guid><description>&lt;h1 id="user-journey-diagram">User Journey Diagram &lt;a href="#user-journey-diagram" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>User journeys describe at a high level of detail exactly what steps different users take to complete a specific task within a system, application or website. This technique shows the current (as-is) user workflow, and reveals areas of improvement for the to-be workflow. (Wikipedia)&lt;/p>&lt;/blockquote>
+&lt;p>Mermaid can render user journey diagrams:&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="0d7d4c5" class="language-mermaid-example ">
+ &lt;code>journey
+ title My working day
+ section Go to work
+ Make tea: 5: Me
+ Go upstairs: 3: Me
+ Do work: 1: Me, Cat
+ section Go home
+ Go downstairs: 5: Me
+ Sit down: 5: Me&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;pre class="mermaid">journey
+ title My working day
+ section Go to work
+ Make tea: 5: Me
+ Go upstairs: 3: Me
+ Do work: 1: Me, Cat
+ section Go home
+ Go downstairs: 5: Me
+ Sit down: 5: Me
+&lt;/pre>
+&lt;p>Each user journey is split into sections, these describe the part of the task
+the user is trying to complete.&lt;/p></description></item><item><title>XY Chart</title><link>https://blahvalf.github.io/docs/mix/mermaid/syntax/xychart/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/mix/mermaid/syntax/xychart/</guid><description>&lt;h1 id="xy-chart">XY Chart &lt;a href="#xy-chart" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;blockquote>
+&lt;p>In the context of mermaid-js, the XY chart is a comprehensive charting module that encompasses various types of charts that utilize both x-axis and y-axis for data representation. Presently, it includes two fundamental chart types: the bar chart and the line chart. These charts are designed to visually display and analyze data that involve two numerical variables.&lt;/p>&lt;/blockquote>
+&lt;blockquote>
+&lt;p>It&amp;rsquo;s important to note that while the current implementation of mermaid-js includes these two chart types, the framework is designed to be dynamic and adaptable. Therefore, it has the capacity for expansion and the inclusion of additional chart types in the future. This means that users can expect an evolving suite of charting options within the XY chart module, catering to various data visualization needs as new chart types are introduced over time.&lt;/p></description></item></channel></rss>

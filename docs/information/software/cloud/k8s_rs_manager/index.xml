@@ -1,0 +1,668 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>K8s集群控制 on My New Hugo Site</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/</link><description>Recent content in K8s集群控制 on My New Hugo Site</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/index.xml" rel="self" type="application/rss+xml"/><item><title>资源对象</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/resources/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/resources/</guid><description>&lt;p>以下列举的内容都是 Kubernetes 中的对象（Object），这些对象都可以在 YAML 文件中作为一种 API 类型来配置。&lt;/p>
+&lt;ul>
+&lt;li>Pod&lt;/li>
+&lt;li>Node&lt;/li>
+&lt;li>Namespace&lt;/li>
+&lt;li>Service&lt;/li>
+&lt;li>Volume&lt;/li>
+&lt;li>PersistentVolume&lt;/li>
+&lt;li>Deployment&lt;/li>
+&lt;li>Secret&lt;/li>
+&lt;li>StatefulSet&lt;/li>
+&lt;li>DaemonSet&lt;/li>
+&lt;li>ServiceAccount&lt;/li>
+&lt;li>ReplicationController&lt;/li>
+&lt;li>ReplicaSet&lt;/li>
+&lt;li>Job&lt;/li>
+&lt;li>CronJob&lt;/li>
+&lt;li>SecurityContext&lt;/li>
+&lt;li>ResourceQuota&lt;/li>
+&lt;li>LimitRange&lt;/li>
+&lt;li>HorizontalPodAutoscaling&lt;/li>
+&lt;li>Ingress&lt;/li>
+&lt;li>ConfigMap&lt;/li>
+&lt;li>Label&lt;/li>
+&lt;li>CustomResourceDefinition&lt;/li>
+&lt;li>Role&lt;/li>
+&lt;li>ClusterRole&lt;/li>
+&lt;/ul>
+&lt;p>我将它们简单的分类为以下几种资源对象：&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th style="text-align: left">类别&lt;/th>
+ &lt;th>名称&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td style="text-align: left">资源对象&lt;/td>
+ &lt;td>Pod、ReplicaSet、ReplicationController、Deployment、StatefulSet、DaemonSet、Job、CronJob、HorizontalPodAutoscaling、Node、Namespace、Service、Ingress、Label、CustomResourceDefinition&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">存储对象&lt;/td>
+ &lt;td>Volume、PersistentVolume、Secret、ConfigMap&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">策略对象&lt;/td>
+ &lt;td>SecurityContext、ResourceQuota、LimitRange&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">身份对象&lt;/td>
+ &lt;td>ServiceAccount、Role、ClusterRole&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="理解-kubernetes-中的对象">理解 Kubernetes 中的对象 &lt;a href="#%e7%90%86%e8%a7%a3-kubernetes-%e4%b8%ad%e7%9a%84%e5%af%b9%e8%b1%a1" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>在 Kubernetes 系统中，&lt;em>Kubernetes 对象&lt;/em> 是持久化的条目。Kubernetes 使用这些条目去表示整个集群的状态。特别地，它们描述了如下信息：&lt;/p>
+&lt;ul>
+&lt;li>什么容器化应用在运行（以及在哪个 Node 上）&lt;/li>
+&lt;li>可以被应用使用的资源&lt;/li>
+&lt;li>关于应用如何表现的策略，比如重启策略、升级策略，以及容错策略&lt;/li>
+&lt;/ul>
+&lt;p>Kubernetes 对象是 “目标性记录” —— 一旦创建对象，Kubernetes 系统将持续工作以确保对象存在。通过创建对象，可以有效地告知 Kubernetes 系统，所需要的集群工作负载看起来是什么样子的，这就是 Kubernetes 集群的 &lt;strong>期望状态&lt;/strong>。&lt;/p>
+&lt;p>与 Kubernetes 对象工作 —— 是否创建、修改，或者删除 —— 需要使用 Kubernetes API。当使用 &lt;code>kubectl&lt;/code> 命令行接口时，比如，CLI 会使用必要的 Kubernetes API 调用，也可以在程序中直接使用 Kubernetes API。为了实现该目标，Kubernetes 当前提供了一个 &lt;code>golang&lt;/code> &lt;a href="https://github.com/kubernetes/client-go" rel="external" target="_blank">客户端库&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> ，其它语言库（例如&lt;a href="https://github.com/kubernetes-incubator/client-python" rel="external" target="_blank">Python&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>）也正在开发中。&lt;/p></description></item><item><title>Pod</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/pod/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/pod/</guid><description>&lt;h2 id="概念">概念 &lt;a href="#%e6%a6%82%e5%bf%b5" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Pod 是 Kubernetes 中最小的可部署单元，代表集群中运行的一个应用实例，由一个或多个紧密关联的容器组成。这些容器共享网络命名空间（同一 IP 和端口）、存储卷及其他资源，支持协同工作模式（如主容器与 sidecar 辅助容器配合）。通常情况下，每个 Pod 封装单个容器，但在需要耦合协作的场景（如日志收集、配置同步）中可包含多个容器。Pod 不直接管理，而是通过控制器（如 Deployment）进行复制扩展（运行多个相同 Pod 实现水平扩容），且支持 Docker 在内的多种容器运行时。&lt;/p>
+&lt;p>Pod 支持在同一节点上运行多个容器，这些容器共享网络命名空间（同一IP和端口）及存储卷，形成紧密协作的进程组。典型用例是主容器（如Web服务）与Sidecar容器（如日志收集、配置更新）协同工作：&lt;/p>
+&lt;ul>
+&lt;li>网络共享：容器通过 localhost 直接通信，对外暴露统一IP。&lt;/li>
+&lt;li>存储共享：多个容器可读写同一持久化Volume，避免数据丢失。&lt;/li>
+&lt;li>调度特性：容器始终被共同调度到同一节点，确保低延迟协作。&lt;/li>
+&lt;/ul>
+&lt;p>⚠️ 适用场景：仅当容器需强耦合（如实时文件同步、依赖本地通信）时使用多容器Pod，否则优先采用单容器Pod+独立服务设计，以降低复杂度。&lt;/p>
+&lt;p>在 Kubernetes 中，Pod 作为短暂且易失的实体，通常不直接单独创建，因其缺乏自愈能力且生命周期受节点故障、资源不足或进程终止等影响而无法持久。为确保高可用性和弹性，用户通过更高级的 Controller（如 Deployment、StatefulSet、DaemonSet）管理 Pod。Controller 基于 Pod 模板动态创建并维护 Pod 集群，提供副本控制、滚动升级及自愈能力，例如在节点故障时自动将 Pod 重新调度至健康节点，从而抽象化底层运维复杂度，保障应用持续稳定运行。&lt;/p>
+&lt;h3 id="动机">动机 &lt;a href="#%e5%8a%a8%e6%9c%ba" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>管理： Pod 是一个服务的多个进程的聚合单位，pod 提供这种模型能够简化应用部署管理，通过提供一个更高级别的抽象的方式。Pod 作为一个独立的部署单位，支持横向扩展和复制。共生（协同调度），命运共同体（例如被终结），协同复制，资源共享，依赖管理，pod 都会自动的为容器处理这些问题。&lt;/li>
+&lt;li>资源共享和通信： Pod 中的应用可以共享网络空间（IP 地址和端口），因此可以通过 localhost 互相发现。Pod 中的应用容器可以共享卷。持久化卷能够保证 pod 重启时使用的数据不丢失。&lt;/li>
+&lt;/ul>
+&lt;h3 id="持久性">持久性 &lt;a href="#%e6%8c%81%e4%b9%85%e6%80%a7" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>Pod 在设计支持就不是作为持久化实体的。在调度失败、节点故障、缺少资源或者节点维护的状态下都会死掉会被驱逐。&lt;/p>
+&lt;p>通常，用户不需要手动直接创建 Pod，而是应该使用 controller（例如 Deployments），即使是在创建单个 Pod 的情况下。Controller 可以提供集群级别的自愈功能、复制和升级管理。&lt;/p></description></item><item><title>Node</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/node/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/node/</guid><description>&lt;p>Node 是 Kubernetes 集群的工作节点，可以是物理机也可以是虚拟机。&lt;/p>
+&lt;h2 id="node-的状态">Node 的状态 &lt;a href="#node-%e7%9a%84%e7%8a%b6%e6%80%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Node 包括如下状态信息：&lt;/p>
+&lt;ul>
+&lt;li>Address
+&lt;ul>
+&lt;li>HostName：可以被 kubelet 中的 &lt;code>--hostname-override&lt;/code> 参数替代。&lt;/li>
+&lt;li>ExternalIP：可以被集群外部路由到的 IP 地址。&lt;/li>
+&lt;li>InternalIP：集群内部使用的 IP，集群外部无法访问。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Condition
+&lt;ul>
+&lt;li>OutOfDisk：磁盘空间不足时为 &lt;code>True&lt;/code>&lt;/li>
+&lt;li>Ready：Node controller 40 秒内没有收到 node 的状态报告为 &lt;code>Unknown&lt;/code>，健康为 &lt;code>True&lt;/code>，否则为 &lt;code>False&lt;/code>。&lt;/li>
+&lt;li>MemoryPressure：当 node 有内存压力时为 &lt;code>True&lt;/code>，否则为 &lt;code>False&lt;/code>。&lt;/li>
+&lt;li>DiskPressure：当 node 有磁盘压力时为 &lt;code>True&lt;/code>，否则为 &lt;code>False&lt;/code>。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Capacity
+&lt;ul>
+&lt;li>CPU&lt;/li>
+&lt;li>内存&lt;/li>
+&lt;li>可运行的最大 Pod 个数&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Info：节点的一些版本信息，如 OS、kubernetes、docker 等&lt;/li>
+&lt;/ul>
+&lt;h2 id="node-管理">Node 管理 &lt;a href="#node-%e7%ae%a1%e7%90%86" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>禁止 Pod 调度到该节点上。&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="de0d432" class="language-bash ">
+ &lt;code>kubectl cordon &amp;lt;node&amp;gt;&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>驱逐该节点上的所有 Pod。&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="998a85e" class="language-bash ">
+ &lt;code>kubectl drain &amp;lt;node&amp;gt;&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>该命令会删除该节点上的所有 Pod（DaemonSet 除外），在其他 node 上重新启动它们，通常该节点需要维护时使用该命令。直接使用该命令会自动调用&lt;code>kubectl cordon &amp;lt;node&amp;gt;&lt;/code>命令。当该节点维护完成，启动了 kubelet 后，再使用&lt;code>kubectl uncordon &amp;lt;node&amp;gt;&lt;/code> 即可将该节点添加到 kubernetes 集群中。&lt;/p></description></item><item><title>Namespace</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/namespace/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/namespace/</guid><description>&lt;p>在一个 Kubernetes 集群中可以使用 namespace 创建多个 “虚拟集群”，这些 namespace 之间可以完全隔离，也可以通过某种方式，让一个 namespace 中的 service 可以访问到其他的 namespace 中的服务，比如 Traefik ingress 和 &lt;code>kube-system&lt;/code>namespace 下的 service 就可以为整个集群提供服务，这些都需要通过 RBAC 定义集群级别的角色来实现。&lt;/p>
+&lt;h2 id="哪些情况下适合使用多个-namespace">哪些情况下适合使用多个 namespace &lt;a href="#%e5%93%aa%e4%ba%9b%e6%83%85%e5%86%b5%e4%b8%8b%e9%80%82%e5%90%88%e4%bd%bf%e7%94%a8%e5%a4%9a%e4%b8%aa-namespace" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>因为 namespace 可以提供独立的命名空间，因此可以实现部分的环境隔离。当你的项目和人员众多的时候可以考虑根据项目属性，例如生产、测试、开发划分不同的 namespace。&lt;/p>
+&lt;h2 id="namespace-使用">Namespace 使用 &lt;a href="#namespace-%e4%bd%bf%e7%94%a8" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>**获取集群中有哪些 namespace **&lt;/p>
+&lt;p>&lt;code>kubectl get ns&lt;/code>&lt;/p>
+&lt;p>集群中默认会有 &lt;code>default&lt;/code> 和 &lt;code>kube-system&lt;/code> 这两个 namespace。&lt;/p>
+&lt;p>在执行 &lt;code>kubectl&lt;/code> 命令时可以使用 &lt;code>-n&lt;/code> 指定操作的 namespace。&lt;/p>
+&lt;p>用户的普通应用默认是在 &lt;code>default&lt;/code> 下，与集群管理相关的为整个集群提供服务的应用一般部署在 &lt;code>kube-system&lt;/code> 的 namespace 下，例如我们在安装 kubernetes 集群时部署的 &lt;code>kubedns&lt;/code>、&lt;code>heapseter&lt;/code>、&lt;code>EFK&lt;/code> 等都是在这个 namespace 下面。&lt;/p>
+&lt;p>另外，并不是所有的资源对象都会对应 namespace，&lt;code>node&lt;/code> 和 &lt;code>persistentVolume&lt;/code> 就不属于任何 namespace。&lt;/p></description></item><item><title>Label</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/label/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/label/</guid><description>&lt;p>Label 是附着到 object 上（例如 Pod）的键值对。可以在创建 object 的时候指定，也可以在 object 创建后随时指定。Labels 的值对系统本身并没有什么含义，只是对用户才有意义。&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="dc26948" class="language-json ">
+ &lt;code>&amp;#34;labels&amp;#34;: {
+ &amp;#34;key1&amp;#34; : &amp;#34;value1&amp;#34;,
+ &amp;#34;key2&amp;#34; : &amp;#34;value2&amp;#34;
+}&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>Kubernetes 最终将对 labels 最终索引和反向索引用来优化查询和 watch，在 UI 和命令行中会对它们排序。不要在 label 中使用大型、非标识的结构化数据，记录这样的数据应该用 annotation。&lt;/p>
+&lt;h2 id="动机">动机 &lt;a href="#%e5%8a%a8%e6%9c%ba" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Label 能够将组织架构映射到系统架构上（就像是康威定律），这样能够更便于微服务的管理，你可以给 object 打上如下类型的 label：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>&amp;quot;release&amp;quot; : &amp;quot;stable&amp;quot;&lt;/code>, &lt;code>&amp;quot;release&amp;quot; : &amp;quot;canary&amp;quot;&lt;/code>&lt;/li>
+&lt;li>&lt;code>&amp;quot;environment&amp;quot; : &amp;quot;dev&amp;quot;&lt;/code>, &lt;code>&amp;quot;environment&amp;quot; : &amp;quot;qa&amp;quot;&lt;/code>, &lt;code>&amp;quot;environment&amp;quot; : &amp;quot;production&amp;quot;&lt;/code>&lt;/li>
+&lt;li>&lt;code>&amp;quot;tier&amp;quot; : &amp;quot;frontend&amp;quot;&lt;/code>, &lt;code>&amp;quot;tier&amp;quot; : &amp;quot;backend&amp;quot;&lt;/code>, &lt;code>&amp;quot;tier&amp;quot; : &amp;quot;cache&amp;quot;&lt;/code>&lt;/li>
+&lt;li>&lt;code>&amp;quot;partition&amp;quot; : &amp;quot;customerA&amp;quot;&lt;/code>, &lt;code>&amp;quot;partition&amp;quot; : &amp;quot;customerB&amp;quot;&lt;/code>&lt;/li>
+&lt;li>&lt;code>&amp;quot;track&amp;quot; : &amp;quot;daily&amp;quot;&lt;/code>, &lt;code>&amp;quot;track&amp;quot; : &amp;quot;weekly&amp;quot;&lt;/code>&lt;/li>
+&lt;li>&lt;code>&amp;quot;team&amp;quot; : &amp;quot;teamA&amp;quot;&lt;/code>,&lt;code>&amp;quot;team:&amp;quot; : &amp;quot;teamB&amp;quot;&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;h2 id="语法和字符集">语法和字符集 &lt;a href="#%e8%af%ad%e6%b3%95%e5%92%8c%e5%ad%97%e7%ac%a6%e9%9b%86" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Label key 的组成：&lt;/p></description></item><item><title>Annotation</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/annotation/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/annotation/</guid><description>&lt;p>Annotation，顾名思义，就是注解。Annotation 可以将 Kubernetes 资源对象关联到任意的非标识性元数据。使用客户端（如工具和库）可以检索到这些元数据。&lt;/p>
+&lt;h2 id="关联元数据到对象">关联元数据到对象 &lt;a href="#%e5%85%b3%e8%81%94%e5%85%83%e6%95%b0%e6%8d%ae%e5%88%b0%e5%af%b9%e8%b1%a1" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>Label 和 Annotation 都可以将元数据关联到 Kubernetes 资源对象。Label 主要用于选择对象，可以挑选出满足特定条件的对象。相比之下，annotation 不能用于标识及选择对象。annotation 中的元数据可多可少，可以是结构化的或非结构化的，也可以包含 label 中不允许出现的字符。&lt;/p>
+&lt;p>Annotation 和 label 一样都是 key/value 键值对映射结构：&lt;/p>
+&lt;p>&lt;code>json&amp;quot;annotations&amp;quot;: {&amp;quot;key1&amp;quot;:&amp;quot;value1&amp;quot;,&amp;quot;key2&amp;quot;:&amp;quot;value2&amp;quot;}&lt;/code>&lt;/p>
+&lt;p>以下列出了一些可以记录在 annotation 中的对象信息：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>声明配置层管理的字段。使用 annotation 关联这类字段可以用于区分以下几种配置来源：客户端或服务器设置的默认值，自动生成的字段或自动生成的 auto-scaling 和 auto-sizing 系统配置的字段。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>创建信息、版本信息或镜像信息。例如时间戳、版本号、git 分支、PR 序号、镜像哈希值以及仓库地址。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>记录日志、监控、分析或审计存储仓库的指针&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>可以用于 debug 的客户端（库或工具）信息，例如名称、版本和创建信息。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>用户信息，以及工具或系统来源信息、例如来自非 Kubernetes 生态的相关对象的 URL 信息。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>轻量级部署工具元数据，例如配置或检查点。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>负责人的电话或联系方式，或能找到相关信息的目录条目信息，例如团队网站。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>如果不使用 annotation，您也可以将以上类型的信息存放在外部数据库或目录中，但这样做不利于创建用于部署、管理、内部检查的共享工具和客户端库。&lt;/p>
+&lt;h2 id="示例">示例 &lt;a href="#%e7%a4%ba%e4%be%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>如 Istio 的 Deployment 配置中就使用到了 annotation：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="e63afa7" class="language-yaml ">
+ &lt;code>apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+ name: istio-manager
+spec:
+ replicas: 1
+ template:
+ metadata:
+ annotations:
+ alpha.istio.io/sidecar: ignore
+ labels:
+ istio: manager
+ spec:
+ serviceAccountName: istio-manager-service-account
+ containers:
+ - name: discovery
+ image: harbor-001.jimmysong.io/library/manager:0.1.5
+ imagePullPolicy: Always
+ args: [&amp;#34;discovery&amp;#34;, &amp;#34;-v&amp;#34;, &amp;#34;2&amp;#34;]
+ ports:
+ - containerPort: 8080
+ env:
+ - name: POD_NAMESPACE
+ valueFrom:
+ fieldRef:
+ apiVersion: v1
+ fieldPath: metadata.namespace
+ - name: apiserver
+ image: harbor-001.jimmysong.io/library/manager:0.1.5
+ imagePullPolicy: Always
+ args: [&amp;#34;apiserver&amp;#34;, &amp;#34;-v&amp;#34;, &amp;#34;2&amp;#34;]
+ ports:
+ - containerPort: 8081
+ env:
+ - name: POD_NAMESPACE
+ valueFrom:
+ fieldRef:
+ apiVersion: v1
+ fieldPath: metadata.namespace&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>&lt;code>alpha.istio.io/sidecar&lt;/code> 注解就是用来控制是否自动向 pod 中注入 sidecar 的。&lt;/p></description></item><item><title>Taint &amp; Toleration</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/taint_toleration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/taint_toleration/</guid><description>&lt;p>Taint（污点）和 Toleration（容忍）可以作用于 node 和 pod 上，其目的是优化 pod 在集群间的调度，这跟节点亲和性类似，只不过它们作用的方式相反，具有 taint 的 node 和 pod 是互斥关系，而具有节点亲和性关系的 node 和 pod 是相吸的。另外还有可以给 node 节点设置 label，通过给 pod 设置 &lt;code>nodeSelector&lt;/code> 将 pod 调度到具有匹配标签的节点上。&lt;/p>
+&lt;p>Taint 和 toleration 相互配合，可以用来避免 pod 被分配到不合适的节点上。每个节点上都可以应用&lt;strong>一个或多个&lt;/strong> taint ，这表示对于那些不能容忍这些 taint 的 pod，是不会被该节点接受的。如果将 toleration 应用于 pod 上，则表示这些 pod 可以（但不要求）被调度到具有相应 taint 的节点上。&lt;/p>
+&lt;h2 id="示例">示例 &lt;a href="#%e7%a4%ba%e4%be%8b" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>以下分别以为 node 设置 taint 和为 pod 设置 toleration 为例。&lt;/p>
+&lt;h2 id="为-node-设置-taint">为 node 设置 taint &lt;a href="#%e4%b8%ba-node-%e8%ae%be%e7%bd%ae-taint" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>为 node1 设置 taint：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="665ad0f" class="language-bash ">
+ &lt;code>kubectl taint nodes node1 key1=value1:NoSchedule
+kubectl taint nodes node1 key1=value1:NoExecute
+kubectl taint nodes node1 key2=value2:NoSchedule&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>删除上面的 taint：&lt;/p></description></item><item><title>垃圾回收</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/garbage-collection/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/garbage-collection/</guid><description>&lt;p>Kubernetes 垃圾收集器的角色是删除指定的对象，这些对象曾经有但以后不再拥有 Owner 了。&lt;/p>
+&lt;p>&lt;strong>注意&lt;/strong>：垃圾收集是 beta 特性，在 Kubernetes 1.4 及以上版本默认启用。&lt;/p>
+&lt;h2 id="owner-和-dependent">Owner 和 Dependent &lt;a href="#owner-%e5%92%8c-dependent" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>一些 Kubernetes 对象是其它一些的 Owner。例如，一个 ReplicaSet 是一组 Pod 的 Owner。具有 Owner 的对象被称为是 Owner 的 &lt;em>Dependent&lt;/em>。每个 Dependent 对象具有一个指向其所属对象的 &lt;code>metadata.ownerReferences&lt;/code> 字段。&lt;/p>
+&lt;p>有时，Kubernetes 会自动设置 &lt;code>ownerReference&lt;/code> 的值。例如，当创建一个 ReplicaSet 时，Kubernetes 自动设置 ReplicaSet 中每个 Pod 的 &lt;code>ownerReference&lt;/code> 字段值。在 1.6 版本，Kubernetes 会自动为一些对象设置 &lt;code>ownerReference&lt;/code> 的值，这些对象是由 ReplicationController、ReplicaSet、StatefulSet、DaemonSet 和 Deployment 所创建或管理。&lt;/p>
+&lt;p>也可以通过手动设置 &lt;code>ownerReference&lt;/code> 的值，来指定 Owner 和 Dependent 之间的关系。&lt;/p>
+&lt;p>这有一个配置文件&lt;code>my-repset.yaml&lt;/code>，表示一个具有 3 个 Pod 的 ReplicaSet：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="1af8d4d" class="language-yaml ">
+ &lt;code># k8s &amp;gt;= 1.16 使用下面注释 https://stackoverflow.com/questions/64412740/no-matches-for-kind-replicaset-in-version-extensions-v1beta1/64412990#64412990
+# apiVersion: apps/v1
+# k8s &amp;lt; 1.16 使用下面配置
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+ name: my-repset
+spec:
+ replicas: 3
+ selector:
+ matchLabels:
+ pod-is-for: garbage-collection-example
+ template:
+ metadata:
+ labels:
+ pod-is-for: garbage-collection-example
+ spec:
+ containers:
+ - name: nginx
+ image: nginx&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>如果创建该 ReplicaSet，然后查看 Pod 的 metadata 字段，能够看到 OwnerReferences 字段：&lt;/p></description></item><item><title>资源调度</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/scheduling/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/scheduling/</guid><description>&lt;p>Kubernetes 作为一个容器编排调度引擎，资源调度是它的最基本也是最重要的功能，这一节中我们将着重讲解 Kubernetes 中是如何做资源调度的。&lt;/p>
+&lt;p>Kubernetes 中有一个叫做 &lt;code>kube-scheduler&lt;/code> 的组件，该组件就是专门监听 &lt;code>kube-apiserver&lt;/code> 中是否有还未调度到 node 上的 pod，再通过特定的算法为 pod 指定分派 node 运行。&lt;/p>
+&lt;p>Kubernetes 中的众多资源类型，例如 Deployment、DaemonSet、StatefulSet 等都已经定义了 Pod 运行的一些默认调度策略，但是如果我们细心的根据 node 或者 pod 的不同属性，分别为它们打上标签之后，我们将发现 Kubernetes 中的高级调度策略是多么强大。当然如果要实现动态的资源调度，即 pod 已经调度到某些节点上后，因为一些其它原因，想要让 pod 重新调度到其它节点。&lt;/p>
+&lt;p>考虑以下两种情况：&lt;/p>
+&lt;ul>
+&lt;li>集群中有新增节点，想要让集群中的节点的资源利用率比较均衡一些，想要将一些高负载的节点上的 pod 驱逐到新增节点上，这是 kuberentes 的 scheduler 所不支持的，需要使用如 &lt;a href="https://github.com/kubernetes-sigs/descheduler" rel="external" target="_blank">descheduler&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 这样的插件来实现。&lt;/li>
+&lt;li>想要运行一些大数据应用，设计到资源分片，pod 需要与数据分布达到一致均衡，避免个别节点处理大量数据，而其它节点闲置导致整个作业延迟，这时候可以考虑使用 &lt;a href="https://github.com/kubernetes-sigs/kube-batch" rel="external" target="_blank">kube-batch&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/li>
+&lt;/ul></description></item><item><title>Qos 服务质量等级</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/qos/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/qos/</guid><description>&lt;p>QoS（Quality of Service），大部分译为“服务质量等级”，又译作“服务质量保证”，是作用在 Pod 上的一个配置，当 Kubernetes 创建一个 Pod 时，它就会给这个 Pod 分配一个 QoS 等级，可以是以下等级之一：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>Guaranteed&lt;/strong>：Pod 里的每个容器都必须有内存/CPU 限制和请求，而且值必须相等。&lt;/li>
+&lt;li>&lt;strong>Burstable&lt;/strong>：Pod 里至少有一个容器有内存或者 CPU 请求且不满足 Guarantee 等级的要求，即内存/CPU 的值设置的不同。&lt;/li>
+&lt;li>&lt;strong>BestEffort&lt;/strong>：容器必须没有任何内存或者 CPU 的限制或请求。&lt;/li>
+&lt;/ul>
+&lt;p>该配置不是通过一个配置项来配置的，而是通过配置 CPU/内存的 &lt;code>limits&lt;/code> 与 &lt;code>requests&lt;/code> 值的大小来确认服务质量等级的。使用 &lt;code>kubectl get pod -o yaml&lt;/code> 可以看到 pod 的配置输出中有 &lt;code>qosClass&lt;/code> 一项。该配置的作用是为了给资源调度提供策略支持，Kubernetes 依赖这种分类来决定当 Node 上没有足够可用资源时要驱逐哪些 Pod。&lt;/p>
+&lt;p>例如，下面这个 YAML 配置中的 Pod 资源配置部分设置的服务质量等级就是 &lt;code>Guarantee&lt;/code>。&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="508101c" class="language-yaml ">
+ &lt;code>spec:
+ containers:
+ ...
+ resources:
+ limits:
+ cpu: 100m
+ memory: 128Mi
+ requests:
+ cpu: 100m
+ memory: 128Mi&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>下面的 YAML 配置的 Pod 的服务质量等级是 &lt;code>Burstable&lt;/code>。&lt;/p></description></item><item><title>Deployment</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/deployment/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/deployment/</guid><description>&lt;p>Deployment 为 Pod 和 ReplicaSet 提供了一个声明式定义（declarative）方法，用来替代以前的 ReplicationController 来方便的管理应用。典型的应用场景包括：&lt;/p>
+&lt;ul>
+&lt;li>定义 Deployment 来创建 Pod 和 ReplicaSet&lt;/li>
+&lt;li>滚动升级和回滚应用&lt;/li>
+&lt;li>扩容和缩容&lt;/li>
+&lt;li>暂停和继续 Deployment&lt;/li>
+&lt;/ul>
+&lt;p>比如一个简单的 nginx 应用可以定义为：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="7ebceb4" class="language-yaml ">
+ &lt;code>apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+ name: nginx-deployment
+spec:
+ replicas: 3
+ template:
+ metadata:
+ labels:
+ app: nginx
+ spec:
+ containers:
+ - name: nginx
+ image: nginx:1.7.9
+ ports:
+ - containerPort: 80&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>扩容：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="76f2e8f" class="language-bash ">
+ &lt;code>kubectl scale deployment nginx-deployment --replicas 10&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>如果集群支持 horizontal pod autoscaling 的话，还可以为 Deployment 设置自动扩展：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="735b490" class="language-bash ">
+ &lt;code>kubectl autoscale deployment nginx-deployment --min=10 --max=15 --cpu-percent=80&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>更新镜像也比较简单：&lt;/p></description></item><item><title>StatefulSet</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/statefulset/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/statefulset/</guid><description>&lt;p>StatefulSet 作为 Controller 为 Pod 提供唯一的标识。它可以保证部署和 scale 的顺序。&lt;/p>
+&lt;p>使用案例参考：&lt;a href="https://github.com/kubernetes/contrib/tree/master/statefulsets" rel="external" target="_blank">kubernetes contrib - statefulsets&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>，其中包含zookeeper和kakfa的statefulset设置和使用说明。&lt;/p>
+&lt;p>StatefulSet是为了解决有状态服务的问题（对应Deployments和ReplicaSets是为无状态服务而设计），其应用场景包括：&lt;/p>
+&lt;ul>
+&lt;li>稳定的持久化存储，即Pod重新调度后还是能访问到相同的持久化数据，基于PVC来实现&lt;/li>
+&lt;li>稳定的网络标志，即Pod重新调度后其PodName和HostName不变，基于Headless Service（即没有Cluster IP的Service）来实现&lt;/li>
+&lt;li>有序部署，有序扩展，即Pod是有顺序的，在部署或者扩展的时候要依据定义的顺序依次依次进行（即从0到N-1，在下一个Pod运行之前所有之前的Pod必须都是Running和Ready状态），基于init containers来实现&lt;/li>
+&lt;li>有序收缩，有序删除（即从N-1到0）&lt;/li>
+&lt;/ul>
+&lt;p>从上面的应用场景可以发现，StatefulSet由以下几个部分组成：&lt;/p>
+&lt;ul>
+&lt;li>用于定义网络标志（DNS domain）的Headless Service&lt;/li>
+&lt;li>用于创建PersistentVolumes的volumeClaimTemplates&lt;/li>
+&lt;li>定义具体应用的StatefulSet&lt;/li>
+&lt;/ul>
+&lt;p>StatefulSet中每个Pod的DNS格式为&lt;code>statefulSetName-{0..N-1}.serviceName.namespace.svc.cluster.local&lt;/code>，其中&lt;/p></description></item><item><title>DaemonSet</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/deamonset/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/deamonset/</guid><description>&lt;p>本文将为您介绍 DaemonSet 的基本概念。&lt;/p>
+&lt;h2 id="什么是-daemonset">什么是 DaemonSet？ &lt;a href="#%e4%bb%80%e4%b9%88%e6%98%af-daemonset" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;em>DaemonSet&lt;/em> 确保全部（或者一些）Node 上运行一个 Pod 的副本。当有 Node 加入集群时，也会为他们新增一个 Pod 。当有 Node 从集群移除时，这些 Pod 也会被回收。删除 DaemonSet 将会删除它创建的所有 Pod。&lt;/p>
+&lt;p>使用 DaemonSet 的一些典型用法：&lt;/p>
+&lt;ul>
+&lt;li>运行集群存储 daemon，例如在每个 Node 上运行 &lt;code>glusterd&lt;/code>、&lt;code>ceph&lt;/code>。&lt;/li>
+&lt;li>在每个 Node 上运行日志收集 daemon，例如&lt;code>fluentd&lt;/code>、&lt;code>logstash&lt;/code>。&lt;/li>
+&lt;li>在每个 Node 上运行监控 daemon，例如 &lt;a href="https://github.com/prometheus/node_exporter" rel="external" target="_blank">Prometheus Node Exporter&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>、&lt;code>collectd&lt;/code>、Datadog 代理、New Relic 代理，或 Ganglia &lt;code>gmond&lt;/code>。&lt;/li>
+&lt;/ul>
+&lt;p>一个简单的用法是，在所有的 Node 上都存在一个 DaemonSet，将被作为每种类型的 daemon 使用。
+一个稍微复杂的用法可能是，对单独的每种类型的 daemon 使用多个 DaemonSet，但具有不同的标志，和/或对不同硬件类型具有不同的内存、CPU要求。&lt;/p></description></item><item><title>ReplicationController 和 ReplicaSet</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/replicaset/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/replicaset/</guid><description>&lt;p>ReplicationController 用来确保容器应用的副本数始终保持在用户定义的副本数，即如果有容器异常退出，会自动创建新的 Pod 来替代；而如果异常多出来的容器也会自动回收。&lt;/p>
+&lt;p>在新版本的 Kubernetes 中建议使用 ReplicaSet 来取代 ReplicationController。ReplicaSet 跟 ReplicationController 没有本质的不同，只是名字不一样，并且 ReplicaSet 支持集合式的 selector。&lt;/p>
+&lt;p>虽然 ReplicaSet 可以独立使用，但一般还是建议使用 Deployment 来自动管理 ReplicaSet，这样就无需担心跟其他机制的不兼容问题（比如 ReplicaSet 不支持 rolling-update 但 Deployment 支持）。&lt;/p>
+&lt;p>ReplicaSet 示例：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="c72f68d" class="language-yaml ">
+ &lt;code>apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+ name: frontend
+ # these labels can be applied automatically
+ # from the labels in the pod template if not set
+ # labels:
+ # app: guestbook
+ # tier: frontend
+spec:
+ # this replicas value is default
+ # modify it according to your case
+ replicas: 3
+ # selector can be applied automatically
+ # from the labels in the pod template if not set,
+ # but we are specifying the selector here to
+ # demonstrate its usage.
+ selector:
+ matchLabels:
+ tier: frontend
+ matchExpressions:
+ - {key: tier, operator: In, values: [frontend]}
+ template:
+ metadata:
+ labels:
+ app: guestbook
+ tier: frontend
+ spec:
+ containers:
+ - name: php-redis
+ image: gcr.io/google_samples/gb-frontend:v3
+ resources:
+ requests:
+ cpu: 100m
+ memory: 100Mi
+ env:
+ - name: GET_HOSTS_FROM
+ value: dns
+ # If your cluster config does not include a dns service, then to
+ # instead access environment variables to find service host
+ # info, comment out the &amp;#39;value: dns&amp;#39; line above, and uncomment the
+ # line below.
+ # value: env
+ ports:
+ - containerPort: 80&lt;/code>
+ &lt;/pre>
+ &lt;/div></description></item><item><title>Job &amp; CronJob</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/job_cronjob/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/job_cronjob/</guid><description>&lt;h1 id="job">Job &lt;a href="#job" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>Job 负责批处理任务，即仅执行一次的任务，它保证批处理任务的一个或多个 Pod 成功结束。&lt;/p>
+&lt;h2 id="job-spec-格式">Job Spec 格式 &lt;a href="#job-spec-%e6%a0%bc%e5%bc%8f" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>spec.template 格式同 Pod&lt;/li>
+&lt;li>RestartPolicy 仅支持 Never 或 OnFailure&lt;/li>
+&lt;li>单个 Pod 时，默认 Pod 成功运行后 Job 即结束&lt;/li>
+&lt;li>&lt;code>.spec.completions&lt;/code> 标志 Job 结束需要成功运行的 Pod 个数，默认为 1&lt;/li>
+&lt;li>&lt;code>.spec.parallelism&lt;/code> 标志并行运行的 Pod 的个数，默认为 1&lt;/li>
+&lt;li>&lt;code>spec.activeDeadlineSeconds&lt;/code> 标志失败 Pod 的重试最大时间，超过这个时间不会继续重试&lt;/li>
+&lt;/ul>
+&lt;p>一个简单的例子：&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="bcd5969" class="language-yaml ">
+ &lt;code>apiVersion: batch/v1
+kind: Job
+metadata:
+ name: pi
+spec:
+ template:
+ metadata:
+ name: pi
+ spec:
+ containers:
+ - name: pi
+ image: perl
+ command: [&amp;#34;perl&amp;#34;, &amp;#34;-Mbignum=bpi&amp;#34;, &amp;#34;-wle&amp;#34;, &amp;#34;print bpi(2000)&amp;#34;]
+ restartPolicy: Never
+$ kubectl create -f ./job.yaml
+job &amp;#34;pi&amp;#34; created
+$ pods=$(kubectl get pods --selector=job-name=pi --output=jsonpath={.items..metadata.name})
+$ kubectl logs $pods -c pi
+3.141592653589793238462643383279502...&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;h2 id="bare-pod">Bare Pod &lt;a href="#bare-pod" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>所谓 Bare Pod 是指直接用 PodSpec 来创建的 Pod（即不在 ReplicaSet 或者 ReplicationController 的管理之下的 Pod）。这些 Pod 在 Node 重启后不会自动重启，但 Job 则会创建新的 Pod 继续任务。所以，推荐使用 Job 来替代 Bare Pod，即便是应用只需要一个 Pod。&lt;/p></description></item><item><title>Ingress</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/ingress/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/ingress/</guid><description>&lt;p>Ingress 是从 Kubernetes 集群外部访问集群内部服务的入口，这篇文章部分译自 Kubernetes 官方文档 &lt;a href="https://kubernetes.io/docs/concepts/services-networking/ingress/" rel="external" target="_blank">Ingress Resource&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>，后面的章节会讲到使用 &lt;a href="https://github.com/containous/traefik" rel="external" target="_blank">Traefik&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a> 来做 Ingress controller，文章末尾给出了几个相关链接。&lt;/p></description></item><item><title>自定义指标 HPA</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/custom_hpa/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/custom_hpa/</guid><description>&lt;p>Kubernetes 中不仅支持 CPU、内存为指标的 HPA，还支持自定义指标的 HPA，例如 QPS。&lt;/p>
+&lt;p>本文中使用的 YAML 文件见 &lt;a href="https://github.com/rootsongjc/kubernetes-handbook/tree/master/manifests/HPA" rel="external" target="_blank">manifests/HPA&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p>
+&lt;h2 id="设置自定义指标">设置自定义指标 &lt;a href="#%e8%ae%be%e7%bd%ae%e8%87%aa%e5%ae%9a%e4%b9%89%e6%8c%87%e6%a0%87" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>&lt;strong>Kubernetes1.6&lt;/strong>&lt;/p>
+&lt;blockquote>
+&lt;p>在 Kubernetes1.6 集群中配置自定义指标的 HPA 的说明已废弃。&lt;/p>&lt;/blockquote>
+&lt;p>在设置定义指标 HPA 之前需要先进行如下配置：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>将 heapster 的启动参数 &lt;code>--api-server&lt;/code> 设置为 true&lt;/p></description></item><item><title>准入控制器（Admission Controller）</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/admission_controller/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/admission_controller/</guid><description>&lt;p>准入控制器（Admission Controller）位于 API Server 中，在对象被持久化之前，准入控制器拦截对 API Server 的请求，一般用来做身份验证和授权。其中包含两个特殊的控制器：&lt;code>MutatingAdmissionWebhook&lt;/code> 和 &lt;code>ValidatingAdmissionWebhook&lt;/code>。分别作为配置的变异和验证&lt;a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#admission-webhooks" rel="external" target="_blank">准入控制 webhook&lt;svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">&lt;path fill="currentColor" d="M14 5c-.552 0-1-.448-1-1s.448-1 1-1h6c.552 0 1 .448 1 1v6c0 .552-.448 1-1 1s-1-.448-1-1v-3.586l-7.293 7.293c-.391.39-1.024.39-1.414 0-.391-.391-.391-1.024 0-1.414l7.293-7.293h-3.586zm-9 2c-.552 0-1 .448-1 1v11c0 .552.448 1 1 1h11c.552 0 1-.448 1-1v-4.563c0-.552.448-1 1-1s1 .448 1 1v4.563c0 1.657-1.343 3-3 3h-11c-1.657 0-3-1.343-3-3v-11c0-1.657 1.343-3 3-3h4.563c.552 0 1 .448 1 1s-.448 1-1 1h-4.563z"/>&lt;/svg>&lt;/a>。&lt;/p>
+&lt;p>准入控制器包括以下两种：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>变更（Mutating）准入控制&lt;/strong>：修改请求的对象&lt;/li>
+&lt;li>&lt;strong>验证（Validating）准入控制&lt;/strong>：验证请求的对象&lt;/li>
+&lt;/ul>
+&lt;p>准入控制器是在 API Server 的启动参数重配置的。一个准入控制器可能属于以上两者中的一种，也可能两者都属于。当请求到达 API Server 的时候首先执行变更准入控制，然后再执行验证准入控制。&lt;/p>
+&lt;p>我们在部署 Kubernetes 集群的时候都会默认开启一系列准入控制器，如果没有设置这些准入控制器的话可以说你的 Kubernetes 集群就是在裸奔，应该只有集群管理员可以修改集群的准入控制器。&lt;/p></description></item><item><title>ResourceVersion &amp; Generation</title><link>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/revision_generation/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/software/cloud/k8s_rs_manager/revision_generation/</guid><description>&lt;p>最近用&lt;code>kubernetes&lt;/code> &lt;code>client-go&lt;/code>实现一个监听 &lt;code>deployments&lt;/code> 变化的功能，在如何判断 &lt;code>kubernetes&lt;/code> 资源的变化有了疑问，查阅文档得知有两个与kubernetes资源对象相关的属性。&lt;/p>
+&lt;ul>
+&lt;li>ResourceVersion&lt;/li>
+&lt;li>Generation&lt;/li>
+&lt;/ul>
+&lt;h3 id="resourceversion">ResourceVersion &lt;a href="#resourceversion" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;code>resourceVersion&lt;/code>的维护利用了底层存储&lt;code>etcd&lt;/code>的&lt;code>Revision&lt;/code>机制。&lt;/p>
+&lt;h4 id="etcd-version">Etcd Version &lt;a href="#etcd-version" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;p>ETCD共四种version&lt;/p>
+&lt;ul>
+&lt;li>Revision&lt;/li>
+&lt;li>ModRevision&lt;/li>
+&lt;li>Version&lt;/li>
+&lt;li>CreateRevision&lt;/li>
+&lt;/ul>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>字段&lt;/th>
+ &lt;th>作用范围&lt;/th>
+ &lt;th>说明&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>Version&lt;/td>
+ &lt;td>Key&lt;/td>
+ &lt;td>单个Key的修改次数，单调递增&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>Revision&lt;/td>
+ &lt;td>全局&lt;/td>
+ &lt;td>Key在集群中的全局版本号，全局唯一&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>ModRevison&lt;/td>
+ &lt;td>Key&lt;/td>
+ &lt;td>Key 最后一次修改时的 Revision&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>CreateRevision&lt;/td>
+ &lt;td>全局&lt;/td>
+ &lt;td>Key 创建时的 Revision&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;p>根据更新资源时是否带有&lt;code>resourceVersion&lt;/code>分两种情况：&lt;/p>
+&lt;ul>
+&lt;li>未带resourceVersion：无条件更新，获得etcd中最新的数据然后再此基础上更新&lt;/li>
+&lt;li>带有resourceVersion：和etcd中modRevision对比，不一样就提示版本冲突，说明数据已发生修改，当前要修改的版本已不是最新数据。&lt;/li>
+&lt;/ul>
+&lt;p>&lt;code>Kubernetes&lt;/code>资源版本控制采用乐观锁，&lt;code>apiserver&lt;/code>在写入&lt;code>etcd&lt;/code>时作冲突检测。&lt;/p>
+&lt;h3 id="generation">Generation &lt;a href="#generation" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;code>Generation&lt;/code>初始值为1，随&lt;code>Spec&lt;/code>内容的改变而自增。&lt;/p>
+&lt;p>如果&lt;code>controller&lt;/code>更新资源失败，常见的做法是，重新拉取资源，如果资源&lt;code>Generation&lt;/code>没有变化，将更新结果&lt;code>Patch&lt;/code>到新的资源上再尝试更新。&lt;/p></description></item></channel></rss>

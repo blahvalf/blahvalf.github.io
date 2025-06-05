@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>安全 on My New Hugo Site</title><link>https://blahvalf.github.io/docs/information/secure/</link><description>Recent content in 安全 on My New Hugo Site</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://blahvalf.github.io/docs/information/secure/index.xml" rel="self" type="application/rss+xml"/><item><title>密码学基础</title><link>https://blahvalf.github.io/docs/information/secure/basic_cryptography/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/secure/basic_cryptography/</guid><description>&lt;h1 id="定义与目标">定义与目标 &lt;a href="#%e5%ae%9a%e4%b9%89%e4%b8%8e%e7%9b%ae%e6%a0%87" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>密码学是研究如何保护信息安全的科学。&lt;/p>
+&lt;p>核心目标：&lt;/p>
+&lt;ul>
+&lt;li>机密性（Confidentiality）：确保信息仅能被授权方读取（如加密电子邮件）。&lt;/li>
+&lt;li>完整性（Integrity）：防止信息被篡改（如数字签名验证文件未被修改）。&lt;/li>
+&lt;li>认证性（Authentication）：验证通信双方身份的真实性（如登录密码或生物识别）。&lt;/li>
+&lt;li>不可否认性（Non-repudiation）：防止发送者事后否认其行为（如区块链交易记录）。&lt;/li>
+&lt;/ul>
+&lt;h1 id="分类">分类 &lt;a href="#%e5%88%86%e7%b1%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;ul>
+&lt;li>技术原理分类
+&lt;ul>
+&lt;li>对称密码（Symmetric Cryptography）
+&lt;ul>
+&lt;li>定义：加密与解密使用同一密钥，也称为私钥密码。&lt;/li>
+&lt;li>分组密码：将明文分为固定长度的块进行加密（如AES、DES、3DES）
+&lt;ul>
+&lt;li>结构：Feistel网络（DES）、SPN结构（AES）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>流密码：将明文逐位加密（如RC4、ChaCha20）&lt;/li>
+&lt;li>特点：速度快，适合大数据量加密，但密钥分发困难。&lt;/li>
+&lt;li>应用场景：文件加密（AES）、无线通信（GSM中的A5/1算法）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>非对称密码（Asymmetric Cryptography）
+&lt;ul>
+&lt;li>定义：使用公钥加密、私钥解密，或私钥签名、公钥验证，也称公钥密码。&lt;/li>
+&lt;li>基于数论难题：RSA（大整数分解）、Diffie-Hellman（离散对数）&lt;/li>
+&lt;li>基于椭圆曲线：ECC（椭圆曲线离散对数）&lt;/li>
+&lt;li>特点：解决密钥分发问题，但计算效率低于对称加密。&lt;/li>
+&lt;li>应用场景：数字签名（RSA）、密钥交换（Diffie-Hellman）、证书认证（X.509）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>哈希函数（Hash Function）
+&lt;ul>
+&lt;li>定义：将任意长度输入映射为固定长度的输出（哈希值），具备单向性和抗碰撞性&lt;/li>
+&lt;li>传统哈希：SHA-256（比特币）、SHA-3（Keccak算法）&lt;/li>
+&lt;li>已淘汰算法：MD5（因碰撞攻击被弃用）&lt;/li>
+&lt;li>特点：不可逆，常用于数据完整性验证和密码存储（加盐哈希）&lt;/li>
+&lt;li>应用场景：区块链Merkle树、文件校验&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>功能目标分类
+&lt;ul>
+&lt;li>加密与解密
+&lt;ul>
+&lt;li>目标：保护数据机密性&lt;/li>
+&lt;li>技术：对称加密（AES）、非对称加密（RSA）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>数字签名（Digital Signature）
+&lt;ul>
+&lt;li>目标：实现认证性和不可否认性。&lt;/li>
+&lt;li>流程：发送方用私钥签名，接收方用公钥验证。&lt;/li>
+&lt;li>算法：RSA签名、ECDSA（比特币交易签名）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>消息认证码（MAC）
+&lt;ul>
+&lt;li>目标：验证数据来源和完整性。&lt;/li>
+&lt;li>技术：HMAC（基于哈希的MAC）、CMAC（基于分组密码的MAC）。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>密钥交换（Key Exchange）
+&lt;ul>
+&lt;li>目标：安全协商共享密钥&lt;/li>
+&lt;li>算法：Diffie-Hellman、ECDH（椭圆曲线Diffie-Hellman）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>应用场景分类
+&lt;ul>
+&lt;li>网络通信安全
+&lt;ul>
+&lt;li>SSL/TLS：混合使用对称加密（AES）和非对称加密（RSA/ECC）。&lt;/li>
+&lt;li>VPN：IPsec协议中的ESP加密与AH认证。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>区块链与数字货币
+&lt;ul>
+&lt;li>椭圆曲线签名：比特币的ECDSA。&lt;/li>
+&lt;li>零知识证明：Zcash的zk-SNARKs。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>隐私保护技术
+&lt;ul>
+&lt;li>同态加密（Homomorphic Encryption）：允许在加密数据上直接运算（如医疗数据分析）。&lt;/li>
+&lt;li>安全多方计算（MPC）：多方协作计算数据，但各自隐私数据不泄露。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h1 id="古典密码">古典密码 &lt;a href="#%e5%8f%a4%e5%85%b8%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h1>&lt;p>古典密码学主要关注信息的保密书写和传递，以及与其相对应的破译方法。&lt;/p>
+&lt;ul>
+&lt;li>理解密码学基础：揭示加密核心思想（混淆与扩散），为现代密码学（如AES的S盒设计）奠定基础。&lt;/li>
+&lt;li>掌握密码分析入门：频率分析、卡西斯基试验等攻击方法，是密码分析思维的起点。&lt;/li>
+&lt;/ul>
+&lt;h2 id="替换密码">替换密码 &lt;a href="#%e6%9b%bf%e6%8d%a2%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>原理：将明文中的字符替换为另一字符（或符号）。&lt;/p>
+&lt;p>典型设计：&lt;/p></description></item><item><title>现代密码学</title><link>https://blahvalf.github.io/docs/information/secure/modern_cryptography/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/secure/modern_cryptography/</guid><description>&lt;h2 id="定义">定义 &lt;a href="#%e5%ae%9a%e4%b9%89" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;p>现代密码学是研究如何在&lt;strong>数学理论&lt;/strong>基础上实现信息安全的学科，其核心目标包括：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>机密性&lt;/strong>（防止信息泄露）&lt;/li>
+&lt;li>&lt;strong>完整性&lt;/strong>（防止数据篡改）&lt;/li>
+&lt;li>&lt;strong>认证性&lt;/strong>（验证身份真实性）&lt;/li>
+&lt;li>&lt;strong>不可否认性&lt;/strong>（防止事后抵赖）&lt;/li>
+&lt;/ul>
+&lt;h2 id="分类与技术实现">分类与技术实现 &lt;a href="#%e5%88%86%e7%b1%bb%e4%b8%8e%e6%8a%80%e6%9c%af%e5%ae%9e%e7%8e%b0" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="一对称密码学">一、对称密码学 &lt;a href="#%e4%b8%80%e5%af%b9%e7%a7%b0%e5%af%86%e7%a0%81%e5%ad%a6" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;h4 id="1-分组密码">1. 分组密码 &lt;a href="#1-%e5%88%86%e7%bb%84%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>DES&lt;/strong>（Data Encryption Standard）&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>设计&lt;/strong>：基于Feistel结构（64位分组，56位密钥），使用S盒实现非线性变换&lt;/li>
+&lt;li>&lt;strong>缺点&lt;/strong>：密钥长度不足，易受暴力破解（已被AES取代）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>AES&lt;/strong>（Advanced Encryption Standard）&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>设计&lt;/strong>：SPN结构（128位分组，支持128/192/256位密钥），通过字节代换、行移位、列混淆和轮密钥加实现加密&lt;/li>
+&lt;li>&lt;strong>优点&lt;/strong>：抗差分/线性密码分析，硬件实现高效&lt;/li>
+&lt;li>&lt;strong>缺点&lt;/strong>：可能遭受旁路攻击（如时序分析）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h4 id="2-流密码">2. 流密码 &lt;a href="#2-%e6%b5%81%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>RC4&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>原理&lt;/strong>：通过伪随机数生成器（PRGA）产生密钥流&lt;/li>
+&lt;li>&lt;strong>缺陷&lt;/strong>：密钥调度算法存在偏差，已发现多组弱密钥&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>ChaCha20&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>优势&lt;/strong>：基于ARX结构（Add-Rotate-XOR），抗时序攻击，移动端性能优异&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="二非对称密码学">二、非对称密码学 &lt;a href="#%e4%ba%8c%e9%9d%9e%e5%af%b9%e7%a7%b0%e5%af%86%e7%a0%81%e5%ad%a6" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;h4 id="1-公钥密码">1. 公钥密码 &lt;a href="#1-%e5%85%ac%e9%92%a5%e5%af%86%e7%a0%81" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>RSA&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>数学基础&lt;/strong>：大整数分解问题（n = p×q）&lt;/li>
+&lt;li>&lt;strong>密钥生成&lt;/strong>：选择大素数p/q，计算n和φ(n)，选取e满足gcd(e,φ(n))=1&lt;/li>
+&lt;li>&lt;strong>缺点&lt;/strong>：计算量大，密钥长度需≥2048位&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>ECC&lt;/strong>（椭圆曲线密码）&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>核心&lt;/strong>：椭圆曲线离散对数问题（ECDLP）&lt;/li>
+&lt;li>&lt;strong>优势&lt;/strong>：相同安全强度下密钥更短（256位ECC ≈ 3072位RSA）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h4 id="2-数字签名">2. 数字签名 &lt;a href="#2-%e6%95%b0%e5%ad%97%e7%ad%be%e5%90%8d" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>DSA&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>流程&lt;/strong>：基于Schnorr签名改进，使用模p域运算&lt;/li>
+&lt;li>&lt;strong>局限&lt;/strong>：签名长度固定320位，但计算效率低于ECDSA&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>ECDSA&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>优化&lt;/strong>：在椭圆曲线上实现数字签名，资源消耗减少50%&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="三哈希函数与完整性">三、哈希函数与完整性 &lt;a href="#%e4%b8%89%e5%93%88%e5%b8%8c%e5%87%bd%e6%95%b0%e4%b8%8e%e5%ae%8c%e6%95%b4%e6%80%a7" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;h4 id="1-密码学哈希">1. 密码学哈希 &lt;a href="#1-%e5%af%86%e7%a0%81%e5%ad%a6%e5%93%88%e5%b8%8c" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>SHA-256&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>结构&lt;/strong>：Merkle-Damgård结构，32位字运算&lt;/li>
+&lt;li>&lt;strong>抗性&lt;/strong>：强抗碰撞性（2^128次操作）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>SHA-3&lt;/strong>&lt;/p></description></item><item><title>密码协议</title><link>https://blahvalf.github.io/docs/information/secure/cryptographic_protocol/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://blahvalf.github.io/docs/information/secure/cryptographic_protocol/</guid><description>&lt;h2 id="一密码协议信任传递的规则体系">一、密码协议：信任传递的规则体系 &lt;a href="#%e4%b8%80%e5%af%86%e7%a0%81%e5%8d%8f%e8%ae%ae%e4%bf%a1%e4%bb%bb%e4%bc%a0%e9%80%92%e7%9a%84%e8%a7%84%e5%88%99%e4%bd%93%e7%b3%bb" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="11-认证协议">1.1 认证协议 &lt;a href="#11-%e8%ae%a4%e8%af%81%e5%8d%8f%e8%ae%ae" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>挑战-响应协议&lt;/strong>&lt;/p>
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ &lt;div class="prism-codeblock ">
+ &lt;pre id="fe9ceff" class="language-python ">
+ &lt;code># 典型挑战-响应流程
+1. 客户端发送认证请求
+2. 服务器生成随机数N（挑战）
+3. 客户端用预共享密钥加密N生成响应R=H(K||N)
+4. 服务器验证R的正确性&lt;/code>
+ &lt;/pre>
+ &lt;/div>
+&lt;p>通过动态挑战值防止重放攻击，广泛应用于智能卡认证、双因素认证等场景。&lt;/p>
+&lt;p>&lt;strong>零知识证明&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>基本原理&lt;/strong>：证明者在不透露秘密信息的前提下验证声明真实性&lt;/li>
+&lt;li>&lt;strong>实用案例&lt;/strong>：ZK-SNARKs在区块链隐私交易中的应用&lt;/li>
+&lt;li>&lt;strong>实现要素&lt;/strong>：
+&lt;ul>
+&lt;li>完备性（Valid proofs verify）&lt;/li>
+&lt;li>可靠性（False statements fail）&lt;/li>
+&lt;li>零知识性（No extra信息泄露）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="12-安全通信协议">1.2 安全通信协议 &lt;a href="#12-%e5%ae%89%e5%85%a8%e9%80%9a%e4%bf%a1%e5%8d%8f%e8%ae%ae" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>TLS 1.3握手流程革新&lt;/strong>&lt;/p>
+&lt;pre class="mermaid">sequenceDiagram
+ Client-&amp;gt;&amp;gt;Server: ClientHello (支持算法列表)
+ Server-&amp;gt;&amp;gt;Client: ServerHello (选定的算法)
+ Server-&amp;gt;&amp;gt;Client: 数字证书 &amp;#43; 公钥
+ Client-&amp;gt;&amp;gt;Server: 预主密钥加密传输
+ 双方-&amp;gt;&amp;gt;安全通道: 生成会话密钥
+&lt;/pre>
+&lt;p>相比TLS 1.2的关键改进：&lt;/p>
+&lt;ul>
+&lt;li>消除不安全算法（如RSA密钥交换）&lt;/li>
+&lt;li>1-RTT快速握手&lt;/li>
+&lt;li>强制前向安全性&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>IPsec协议栈&lt;/strong>&lt;/p>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>协议层&lt;/th>
+ &lt;th>AH协议&lt;/th>
+ &lt;th>ESP协议&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>功能&lt;/td>
+ &lt;td>完整性验证&lt;/td>
+ &lt;td>加密+完整性&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>头部位置&lt;/td>
+ &lt;td>IP层&lt;/td>
+ &lt;td>IP层&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>保护范围&lt;/td>
+ &lt;td>完整数据包&lt;/td>
+ &lt;td>仅载荷&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;hr>
+&lt;h2 id="二密钥管理安全体系的命脉">二、密钥管理：安全体系的命脉 &lt;a href="#%e4%ba%8c%e5%af%86%e9%92%a5%e7%ae%a1%e7%90%86%e5%ae%89%e5%85%a8%e4%bd%93%e7%b3%bb%e7%9a%84%e5%91%bd%e8%84%89" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h2>&lt;h3 id="21-pki体系架构">2.1 PKI体系架构 &lt;a href="#21-pki%e4%bd%93%e7%b3%bb%e6%9e%b6%e6%9e%84" class="anchor" aria-hidden="true">&lt;i class="material-icons align-middle">link&lt;/i>&lt;/a>&lt;/h3>&lt;p>&lt;strong>X.509证书核心字段&lt;/strong>&lt;/p></description></item></channel></rss>
